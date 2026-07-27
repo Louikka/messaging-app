@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
-import { API, UserData } from '../types/server_api_typings';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { API } from '../../../api';
 
 
 @Injectable({
@@ -25,7 +25,11 @@ export class Auth
     private readonly http = inject(HttpClient);
 
     public jwtToken: string | null = null;
-    public userData: UserData | null = null;
+    public userData: {
+        username: string;
+        active_chats: string[];
+        own_chats: string[];
+    } | null = null;
 
 
     private saveToken(token: string)
@@ -36,7 +40,7 @@ export class Auth
 
     private loadUserData()
     {
-        const headers = new HttpHeaders({ 'Content-Type': 'application/json', });
+        const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
         this.http.get<API.user.get.res.body>(
             '/api/user',
             { headers }
@@ -61,7 +65,7 @@ export class Auth
     {
         let isOk = new BehaviorSubject<null | boolean>(null);
 
-        const headers = new HttpHeaders({ 'Content-Type': 'application/json', });
+        const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
         this.http.post<API.register.post.res.body>(
             '/api/register',
             JSON.stringify({ username, password }),
@@ -92,7 +96,7 @@ export class Auth
     {
         let isOk = new BehaviorSubject<null | boolean>(null);
 
-        const headers = new HttpHeaders({ 'Content-Type': 'application/json', });
+        const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
         this.http.post<API.login.post.res.body>(
             '/api/login',
             JSON.stringify({ username, password }),

@@ -64,7 +64,9 @@ export namespace API {
                     chat_name: string;
                 }
             }
-            namespace res {}
+            namespace res {
+                type body = string;
+            }
         }
 
         namespace messages {

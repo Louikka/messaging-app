@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
-import { API } from '../types/server_api_typings';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { API } from '../../../api';
 
 
 @Injectable({
@@ -18,36 +18,44 @@ export class Chats
     private readonly http = inject(HttpClient);
 
 
-    public addNewChat(name: string)
+    public addNewChat(name: string): Observable<boolean>
     {
-        let isOk = new BehaviorSubject<null | boolean>(null);
+        let ok = new Subject<boolean>();
 
-        const body: API.chat.post.req.body = {
-            chat_name: name,
-        };
-        const headers = new HttpHeaders({ 'Content-Type': 'application/json', });
-
-        // http.post won't work unless subscribed ("cold" observable)
-        this.http.post(
-            '/api/chat',
-            JSON.stringify(body),
-            { headers }
+        this.http.post<API.chat.post.res.body>(
+            '/api/chat/',
+            {
+                chat_name: name,
+            },
+            {
+                headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
+            }
         ).subscribe({
             next: (val) =>
             {
-                isOk.next(true);
+                ok.next(true);
             },
             error: (err) =>
             {
                 console.error(err);
-                isOk.next(false);
+                ok.next(false);
             },
             complete: () =>
             {
-                isOk.next(true);
+                ok.next(true);
             },
         });
 
-        return isOk.asObservable();
+        return ok.asObservable();
+    }
+
+    public getAllChats()
+    {
+        //
+    }
+
+    public getChat(chatId: string)
+    {
+        //
     }
 }
