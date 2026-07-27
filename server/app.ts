@@ -3,20 +3,29 @@ import { WebSocketServer } from 'ws';
 import jwt from 'jsonwebtoken';
 import { expressjwt, type Request as JWTRequest } from 'express-jwt';
 
-import { omitUserSensitiveData, RedisClient } from './lib/db.ts';
+import { RedisClient } from './lib/db.ts';
 import { verifyPassword } from './lib/lib.ts';
 import type { API, ChatMessage } from './types/api.d.ts';
 
 
-const SERVER_PORT = 3000;
-const WSS_PORT = 8080;
+try
+{
+    process.loadEnvFile('../.env');
+}
+catch (err)
+{
+    // file does not found
+    console.error(err);
+}
 
-const CRYPTO_KEY = '123';
-const JWT_PRIVATE_KEY = 'shhhhh';
+const SERVER_PORT = +(process.env['SERVER_PORT'] ?? 3000);
+const WSS_PORT = +(process.env['WSS_PORT'] ?? 8080);
+
+const JWT_PRIVATE_KEY = process.env['JWT_PRIVATE_KEY'] ?? 'shhhhh';
 
 
 
-/* Connect Redis *************************************************************/
+/* Database ******************************************************************/
 
 const db = new RedisClient();
 await db.connect();
@@ -25,7 +34,7 @@ await db.connect();
 
 /* Initialize WebSocket ******************************************************/
 
-const wss = new WebSocketServer({ port: WSS_PORT, });
+const wss = new WebSocketServer({ port: WSS_PORT });
 console.debug(`Created WebSocketServer on port :${WSS_PORT}.`);
 
 wss.on('connection', async (ws) =>
@@ -85,7 +94,7 @@ app.post('/api/register', async (req, res) =>
         return;
     }
 
-    db.addNewUser(username, password);
+    await db.addNewUser(username, password);
 
     res.json({
         token: jwt.sign({ username, }, JWT_PRIVATE_KEY),
@@ -123,7 +132,7 @@ app.get('/api/user', async (req: JWTRequest, res) =>
         return;
     }
 
-    const user = await db.getUser(reqAuth.username);
+    const user = await db.getUser(reqAuth['username']);
     if (user === null)
     {
         // user does not exists or credentials are wrong
@@ -177,7 +186,7 @@ app.post('/api/chat', async (req: JWTRequest, res) =>
         return;
     }
 
-    db.addNewChat(reqBody.chat_name, reqAuth.username);
+    await db.addNewChat(reqBody.chat_name, reqAuth['username']);
 
     res.status(200).end();
 });
@@ -207,7 +216,7 @@ app.post('/api/messages', async (req: JWTRequest, res) =>
     }
 
     const userChatMessage = {
-        username: reqAuth.username,
+        username: reqAuth['username'],
         text: reqBody.message,
         timestamp: Date.now(),
     } as ChatMessage;

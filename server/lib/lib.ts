@@ -1,31 +1,18 @@
 import crypto from 'crypto';
 
 
-// const localIP = Object.values(os.networkInterfaces())
-//     .flat()
-//     .find(iface => iface !== undefined && iface.family === 'IPv4' && !iface.internal)
-//     ?.address
-// ;
-//
-// if (localIP !== undefined)
-// {
-//     console.debug(`local IP address found as ${localIP}`);
-// }
-// else
-// {
-//     console.error('Cannot find local IP address.');
-//     console.log('defaulting to localhost...');
-//     localIP = '127.0.0.1';
-// }
-
-
 export function createHashFromString(s: string): string
 {
     return crypto.hash('md5', s);
 }
 
 
-export function hashPassword(password: string)
+export interface HashedPassword {
+    hash: string;
+    salt: string;
+}
+
+export function hashPassword(password: string): HashedPassword
 {
     // Generate a random salt (16 bytes)
     const salt = crypto.randomBytes(16).toString('hex');

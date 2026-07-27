@@ -1,22 +1,42 @@
 import crypto from 'crypto';
 import redis from 'redis';
 import { createHashFromString, hashPassword } from './lib.ts';
-import type { DBChatEntry, DBUserEntry, UserData, UserSensitiveData } from '../types/api.js';
+import type { UserData, UserSensitiveData } from '../types/api.d.ts';
 
 
-type _DBChatEntry = Omit<DBChatEntry, 'messages'>;
-type _DBCharEntryMessages = DBChatEntry['messages'];
+export interface DBUser {
+    username: string;
+    /** Encoded. */
+    password: string;
+    salt: string;
+    /** ID's of chats. */
+    active_chats: Array<string>;
+    /** ID's of chats. */
+    own_chats: Array<string>;
+}
+
+export interface DBChat {
+    id: string;
+    name: string;
+    /** User's name. */
+    owner: string;
+}
+
+export interface DBChatMessage {
+    username: string;
+    text: string;
+    timestamp: number;
+}
 
 
-export function omitUserSensitiveData(d: DBUserEntry): UserData
+/**
+ * @param name primal identifier for key (converts to upper case).
+ * @param val value that will be hashed and concatenated to the key.
+ * @returns string key of type `<name>:<hash>`; for example `ID:123`.
+ */
+function constructDBKey(name: string, val: string): string
 {
-    // see UserSensitiveData in types/api.d.ts
-    [ 'password', 'salt' ].forEach((key) =>
-    {
-        delete d[key as UserSensitiveData];
-    });
-
-    return d;
+    return name.toUpperCase() + ':' + createHashFromString(val);
 }
 
 
@@ -28,7 +48,7 @@ export class RedisClient
 
         this.client.on('error', (err) =>
         {
-            console.error('Redis client error :', err);
+            console.error('Redis client error: ', err);
         });
     }
 
@@ -41,50 +61,20 @@ export class RedisClient
     }
 
 
-    private getDBKeyFrom(value: string, as: 'user' | 'chat'): string
-    {
-        let s = '';
-
-        switch (as)
-        {
-            case 'user':
-            {
-                s += 'USER';
-                break;
-            }
-            case 'chat':
-            {
-                s += 'CHAT';
-                break;
-            }
-
-            default:
-            {
-                throw new Error(`Undefined function argument "${as}"`);
-            }
-        }
-
-        s += createHashFromString(value);
-
-        return s;
-    }
-
-
     public async isUserExists(username: string): Promise<boolean>
     {
-        return await this.client.exists(this.getDBKeyFrom(username, 'user')) > 0;
+        return await this.client.exists(constructDBKey('USER', username)) > 0;
     }
 
-    public async getUser(username: string): Promise<DBUserEntry | null>
+    public async getUser(username: string): Promise<DBUser | null>
     {
         if (await this.isUserExists(username))
         {
             try
             {
-                const user = {} as DBUserEntry;
-
-                const _dbUser = await this.client.hGetAll(this.getDBKeyFrom(username, 'user'));
-                for (const [key, value] of Object.entries(_dbUser))
+                const user = {} as DBUser;
+                const dbUser = await this.client.hGetAll(constructDBKey('USER', username));
+                for (const [key, value] of Object.entries(dbUser))
                 {
                     switch (key)
                     {
@@ -101,7 +91,7 @@ export class RedisClient
 
                         default:
                         {
-                            user[key as keyof Omit<DBUserEntry, 'active_chats' | 'own_chats'>] = value;
+                            user[key as keyof Omit<DBUser, 'active_chats' | 'own_chats'>] = value;
                         }
                     }
                 }
@@ -121,46 +111,37 @@ export class RedisClient
         return null;
     }
 
-    public async updateUser(username: string, field: keyof DBUserEntry, value: any)
+    /**
+     * @returns `-1` if an error occured, `0` if field already existed and get updated, `1` if new field was created.
+     */
+    public async updateUser(username: string, field: keyof DBUser, value: any)
     {
         if (!await this.isUserExists(username))
         {
             console.error(`Unable to update field "${field}" of the user "${username}": no such user exists.`);
-            return;
+            return -1;
         }
 
-        this.client.hSet(this.getDBKeyFrom(username, 'user'), field, value);
+        return await this.client.hSet(constructDBKey('USER', username), field, value);
     }
 
 
     public async isChatExists(chatId: string): Promise<boolean>
     {
-        return await this.client.exists(this.getDBKeyFrom(chatId, 'chat')) > 0;
+        return await this.client.exists(constructDBKey('CHAT', chatId)) > 0;
     }
 
-    public async getChat(chatId: string): Promise<DBChatEntry | null>
+    public async getChat(chatId: string): Promise<DBChat | null>
     {
         if (await this.isChatExists(chatId))
         {
             try
             {
-                const chat: DBChatEntry = {
-                    id: '',
-                    name: '',
-                    owner: '',
-                    messages: [],
-                };
-
-                const _dbChat = await this.client.hGetAll(this.getDBKeyFrom(chatId, 'chat'));
-                for (const [key, value] of Object.entries(_dbChat))
+                const chat = {} as DBChat;
+                const dbChat = await this.client.hGetAll(constructDBKey('CHAT', chatId));
+                for (const [key, value] of Object.entries(dbChat))
                 {
-                    chat[key as keyof _DBChatEntry] = value;
-                }
-
-                const _dbChatMessages = await this.client.lRange(this.getDBKeyFrom(chatId, 'chat') + ':MESSAGES', 0, -1);
-                for (const message of _dbChatMessages)
-                {
-                    chat.messages.push(JSON.parse(message));
+                    chat[key as keyof DBChat] = value;
                 }
 
                 return chat;
@@ -178,10 +159,38 @@ export class RedisClient
         return null;
     }
 
+    public async getChatMessages(chatId: string): Promise<DBChatMessage[] | null>
+    {
+        if (await this.isChatExists(chatId))
+        {
+            try
+            {
+                const messages = [] as DBChatMessage[];
+                const dbChatMessages = await this.client.lRange(constructDBKey('CHAT', chatId) + ':MESSAGES', 0, -1);
+                for (const message of dbChatMessages)
+                {
+                    messages.push(JSON.parse(message));
+                }
+
+                return messages;
+            }
+            catch (err)
+            {
+                console.error(err);
+            }
+        }
+        else
+        {
+            console.debug(`Unable to get chat "${chatId}".`);
+        }
+
+        return null;
+    }
+
 
     public async addNewUser(username: string, password: string)
     {
-        const userDBKey = this.getDBKeyFrom(username, 'user');
+        const userDBKey = constructDBKey('USER', username);
         const hashedPassword = hashPassword(password);
 
         await this.client.hSet(userDBKey, 'username', username);
@@ -190,20 +199,24 @@ export class RedisClient
         await this.client.hSet(userDBKey, 'active_chats', '[]');
         await this.client.hSet(userDBKey, 'own_chats', '[]');
 
-        console.debug('Successfully added new user :', username);
+        console.debug('Successfully added new user: ', username);
     }
 
-    public async addNewChat(name: string, owner: string)
+    /**
+     * @param name name of the chat.
+     * @returns generated chat id (or `null` if error).
+     */
+    public async addNewChat(name: string, owner: string): Promise<string | null>
     {
         const user = await this.getUser(owner);
         if (user === null)
         {
             console.warn(`User "${owner}" does not exists.`);
-            return;
+            return null;
         }
 
         const chatId = crypto.randomUUID();
-        const chatDBKey = this.getDBKeyFrom(chatId, 'chat');
+        const chatDBKey = constructDBKey('CHAT', chatId);
 
         await this.client.hSet(chatDBKey, 'id', chatId);
         await this.client.hSet(chatDBKey, 'name', name);
@@ -212,9 +225,13 @@ export class RedisClient
         user.own_chats.push(chatId);
         user.active_chats.push(chatId);
 
-        this.updateUser(owner, 'own_chats', JSON.stringify(user.own_chats));
-        this.updateUser(owner, 'active_chats', JSON.stringify(user.active_chats));
+        let ok = true;
+        ok &&= await this.updateUser(owner, 'own_chats', JSON.stringify(user.own_chats)) >= 0;
+        ok &&= await this.updateUser(owner, 'active_chats', JSON.stringify(user.active_chats)) >= 0;
+        if (!ok) return null;
 
-        console.debug('Successfully added new chat :', chatId, name);
+        console.debug('Successfully added new chat: ', chatId, name);
+
+        return chatId;
     }
 }
