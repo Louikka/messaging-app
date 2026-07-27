@@ -3,14 +3,14 @@ import { WebSocketServer } from 'ws';
 import jwt from 'jsonwebtoken';
 import { expressjwt, type Request as JWTRequest } from 'express-jwt';
 
-import { RedisClient } from './lib/db.ts';
+import { RedisClient, type DBChatMessage } from './lib/db.ts';
 import { verifyPassword } from './lib/lib.ts';
-import type { API, ChatMessage } from './types/api.d.ts';
+import type { API } from '../api.d.ts';
 
 
 try
 {
-    process.loadEnvFile('../.env');
+    process.loadEnvFile('./.env');
 }
 catch (err)
 {
@@ -37,7 +37,7 @@ await db.connect();
 const wss = new WebSocketServer({ port: WSS_PORT });
 console.debug(`Created WebSocketServer on port :${WSS_PORT}.`);
 
-wss.on('connection', async (ws) =>
+wss.on('connection', (ws) =>
 {
     console.debug(`WebSocket connection established.`);
 
@@ -82,146 +82,154 @@ app.get('/', (req, res) =>
 });
 
 
-
 app.post('/api/register', async (req, res) =>
 {
-    const { username, password } = req.body;
+    const { username, password } = req.body as API.register.post.req.body;
 
     if (await db.isUserExists(username))
     {
-        // user already exists
-        res.status(401).end();
+        res.statusMessage = 'User already exists.';
+        res.status(500);
+        res.end();
         return;
     }
 
     await db.addNewUser(username, password);
 
     res.json({
-        token: jwt.sign({ username, }, JWT_PRIVATE_KEY),
+        token: jwt.sign({ username }, JWT_PRIVATE_KEY),
     } as API.register.post.res.body);
 });
 
 
-
 app.post('/api/login', async (req, res) =>
 {
-    const { username, password } = req.body;
+    const { username, password } = req.body as API.login.post.req.body;
 
     const user = await db.getUser(username);
-
     if (user === null || !verifyPassword(password, user.password, user.salt))
     {
-        // user does not exists or credentials are wrong
-        res.status(401).end();
+        res.statusMessage = 'User does not exists or credentials are wrong.';
+        res.status(401);
+        res.end();
         return;
     }
 
     res.json({
-        token: jwt.sign({ username, }, JWT_PRIVATE_KEY),
+        token: jwt.sign({ username }, JWT_PRIVATE_KEY),
     } as API.login.post.res.body);
 });
 
 
-
 app.get('/api/user', async (req: JWTRequest, res) =>
 {
-    const reqAuth = req.auth;
-    if (reqAuth === undefined)
-    {
-        console.error('Cannot get JWT token in /api/user GET request.');
-        return;
-    }
+    const jwtPayload = req.auth! ?? console.error('Cannot get JWT payload.');
 
-    const user = await db.getUser(reqAuth['username']);
+    const user = await db.getUser(jwtPayload['username']);
     if (user === null)
     {
-        // user does not exists or credentials are wrong
-        res.status(401).end();
-        return;
-    }
-
-    res.json(omitUserSensitiveData(user) as API.user.get.res.body);
-});
-
-
-
-app.get('/api/chat', async (req: JWTRequest, res) =>
-{
-    const reqBody = req.body as API.chat.get.req.body;
-    if (reqBody === undefined)
-    {
-        console.error(`Cannot parse request's body (returns "undefined").`);
-        // TODO : send response with error?
-        return;
-    }
-
-    const chat = await db.getChat(reqBody.chat_id);
-    if (chat === null)
-    {
-        res.status(404).end();
+        res.statusMessage = 'User does not exists or credentials are wrong.';
+        res.status(401);
+        res.end();
         return;
     }
 
     res.json({
-        chat,
+        username: user.username,
+        active_chats: user.active_chats,
+        own_chats: user.own_chats,
+    } as API.user.get.res.body);
+});
+
+
+app.get('/api/chat/:chatId', async (req: JWTRequest, res) =>
+{
+    const chatId = req.params['chatId'];
+    if (typeof chatId !== 'string')
+    {
+        res.statusMessage = 'Chat ID required to be a valid value.';
+        res.status(400);
+        res.end();
+        return;
+    }
+
+    const chat = await db.getChat(chatId);
+    if (chat === null)
+    {
+        res.statusMessage = `Chat with ID "${chatId}" was not found.`;
+        res.status(404);
+        res.end();
+        return;
+    }
+
+    res.json({
+        ...chat,
     } as API.chat.get.res.body);
+});
+
+app.get('/api/chat/:chatId/messages', async (req: JWTRequest, res) =>
+{
+    const chatId = req.params['chatId'];
+    if (typeof chatId !== 'string')
+    {
+        res.statusMessage = 'Chat ID required to be a valid value.';
+        res.status(400);
+        res.end();
+        return;
+    }
+
+    const chatMessages = await db.getChatMessages(chatId);
+    if (chatMessages === null)
+    {
+        res.statusMessage = `Chat with ID "${chatId}" was not found.`;
+        res.status(404);
+        res.end();
+        return;
+    }
+
+    res.json(chatMessages);
 });
 
 app.post('/api/chat', async (req: JWTRequest, res) =>
 {
     // user request to create new chat
 
-    const reqAuth = req.auth;
-    if (reqAuth === undefined)
-    {
-        console.error('Cannot get JWT token in /api/chat POST request.');
-        return;
-    }
-
+    const jwtPayload = req.auth! ?? console.error('Cannot get JWT payload.');
     const reqBody = req.body as API.chat.post.req.body;
-    if (reqBody === undefined)
+
+    const chatId = await db.addNewChat(reqBody.chat_name, jwtPayload['username']);
+    if (chatId === null)
     {
-        console.error(`Cannot parse request's body (returns "undefined").`);
-        // TODO : send response with error?
+        res.statusMessage = `Unable to create new chat.`;
+        res.status(500);
+        res.end();
         return;
     }
 
-    await db.addNewChat(reqBody.chat_name, reqAuth['username']);
-
-    res.status(200).end();
+    res.send(chatId);
 });
 
-
-
-
-
-
-
-
-app.post('/api/messages', async (req: JWTRequest, res) =>
+app.post('/api/chat/:chatId/messages', async (req: JWTRequest, res) =>
 {
-    const reqAuth = req.auth;
-    if (reqAuth === undefined)
-    {
-        console.error('Cannot get jwt token in /api/messages POST request.');
-        return;
-    }
+    const jwtPayload = req.auth! ?? console.error('Cannot get JWT payload.');
+    const reqBody = req.body as API.chat.messages.post.req.body;
 
-    const reqBody = req.body as API.messages.post.req.body;
-    if (reqBody === undefined)
+    const chatId = req.params['chatId'];
+    if (typeof chatId !== 'string')
     {
-        console.error(`Cannot parse request's body (returns "undefined").`);
-        // TODO : send response with error?
+        res.statusMessage = 'Chat ID required to be a valid value.';
+        res.status(400);
+        res.end();
         return;
     }
 
     const userChatMessage = {
-        username: reqAuth['username'],
+        username: jwtPayload['username'],
         text: reqBody.message,
         timestamp: Date.now(),
-    } as ChatMessage;
+    } as DBChatMessage;
 
-    //db.addChatMessage(userChatMessage);
+    db.addChatMessage(chatId, userChatMessage);
 
 
     // sending new message via ws
@@ -233,7 +241,8 @@ app.post('/api/messages', async (req: JWTRequest, res) =>
     //     }
     // }
 
-    res.status(200).end();
+    res.status(204);
+    res.end();
 });
 
 

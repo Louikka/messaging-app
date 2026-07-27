@@ -1,7 +1,6 @@
 import crypto from 'crypto';
 import redis from 'redis';
 import { createHashFromString, hashPassword } from './lib.ts';
-import type { UserData, UserSensitiveData } from '../types/api.d.ts';
 
 
 export interface DBUser {
@@ -64,6 +63,20 @@ export class RedisClient
     public async isUserExists(username: string): Promise<boolean>
     {
         return await this.client.exists(constructDBKey('USER', username)) > 0;
+    }
+
+    public async addNewUser(username: string, password: string)
+    {
+        const userDBKey = constructDBKey('USER', username);
+        const hashedPassword = hashPassword(password);
+
+        await this.client.hSet(userDBKey, 'username', username);
+        await this.client.hSet(userDBKey, 'password', hashedPassword.hash);
+        await this.client.hSet(userDBKey, 'salt', hashedPassword.salt);
+        await this.client.hSet(userDBKey, 'active_chats', '[]');
+        await this.client.hSet(userDBKey, 'own_chats', '[]');
+
+        console.debug('Successfully added new user: ', username);
     }
 
     public async getUser(username: string): Promise<DBUser | null>
@@ -131,77 +144,6 @@ export class RedisClient
         return await this.client.exists(constructDBKey('CHAT', chatId)) > 0;
     }
 
-    public async getChat(chatId: string): Promise<DBChat | null>
-    {
-        if (await this.isChatExists(chatId))
-        {
-            try
-            {
-                const chat = {} as DBChat;
-                const dbChat = await this.client.hGetAll(constructDBKey('CHAT', chatId));
-                for (const [key, value] of Object.entries(dbChat))
-                {
-                    chat[key as keyof DBChat] = value;
-                }
-
-                return chat;
-            }
-            catch (err)
-            {
-                console.error(err);
-            }
-        }
-        else
-        {
-            console.debug(`Unable to get chat "${chatId}".`);
-        }
-
-        return null;
-    }
-
-    public async getChatMessages(chatId: string): Promise<DBChatMessage[] | null>
-    {
-        if (await this.isChatExists(chatId))
-        {
-            try
-            {
-                const messages = [] as DBChatMessage[];
-                const dbChatMessages = await this.client.lRange(constructDBKey('CHAT', chatId) + ':MESSAGES', 0, -1);
-                for (const message of dbChatMessages)
-                {
-                    messages.push(JSON.parse(message));
-                }
-
-                return messages;
-            }
-            catch (err)
-            {
-                console.error(err);
-            }
-        }
-        else
-        {
-            console.debug(`Unable to get chat "${chatId}".`);
-        }
-
-        return null;
-    }
-
-
-    public async addNewUser(username: string, password: string)
-    {
-        const userDBKey = constructDBKey('USER', username);
-        const hashedPassword = hashPassword(password);
-
-        await this.client.hSet(userDBKey, 'username', username);
-        await this.client.hSet(userDBKey, 'password', hashedPassword.hash);
-        await this.client.hSet(userDBKey, 'salt', hashedPassword.salt);
-        await this.client.hSet(userDBKey, 'active_chats', '[]');
-        await this.client.hSet(userDBKey, 'own_chats', '[]');
-
-        console.debug('Successfully added new user: ', username);
-    }
-
     /**
      * @param name name of the chat.
      * @returns generated chat id (or `null` if error).
@@ -233,5 +175,80 @@ export class RedisClient
         console.debug('Successfully added new chat: ', chatId, name);
 
         return chatId;
+    }
+
+    public async getChat(chatId: string): Promise<DBChat | null>
+    {
+        if (await this.isChatExists(chatId))
+        {
+            try
+            {
+                const chat = {} as DBChat;
+                const dbChat = await this.client.hGetAll(constructDBKey('CHAT', chatId));
+                for (const [key, value] of Object.entries(dbChat))
+                {
+                    chat[key as keyof DBChat] = value;
+                }
+
+                return chat;
+            }
+            catch (err)
+            {
+                console.error(err);
+            }
+        }
+        else
+        {
+            console.debug(`Unable to get chat "${chatId}".`);
+        }
+
+        return null;
+    }
+
+    public async addChatMessage(chatId: string, message: DBChatMessage)
+    {
+        if (await this.isChatExists(chatId))
+        {
+            try
+            {
+                await this.client.rPush(constructDBKey('CHAT', chatId) + ':MESSAGES', JSON.stringify(message));
+            }
+            catch (err)
+            {
+                console.error(err);
+            }
+        }
+        else
+        {
+            console.debug(`Unable to get chat "${chatId}".`);
+        }
+    }
+
+    public async getChatMessages(chatId: string): Promise<DBChatMessage[] | null>
+    {
+        if (await this.isChatExists(chatId))
+        {
+            try
+            {
+                const messages = [] as DBChatMessage[];
+                const dbChatMessages = await this.client.lRange(constructDBKey('CHAT', chatId) + ':MESSAGES', 0, -1);
+                for (const message of dbChatMessages)
+                {
+                    messages.push(JSON.parse(message));
+                }
+
+                return messages;
+            }
+            catch (err)
+            {
+                console.error(err);
+            }
+        }
+        else
+        {
+            console.debug(`Unable to get chat "${chatId}".`);
+        }
+
+        return null;
     }
 }
