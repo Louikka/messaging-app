@@ -6,16 +6,14 @@ import { Auth } from './auth';
 export const loginGuard: CanActivateFn = (route, state) =>
 {
     const router = inject(Router);
-    const authService = inject(Auth);
+    const auth = inject(Auth);
 
-    if (authService.isLoggedIn())
+    if (auth.isLoggedIn())
     {
         return true;
     }
 
-    const loginPath = router.parseUrl('/login');
-    return new RedirectCommand(loginPath,
-    {
+    return new RedirectCommand(router.parseUrl('/login'), {
         skipLocationChange: true,
     });
 };

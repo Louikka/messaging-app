@@ -21,13 +21,13 @@ export class Register
     private registerPasswordRepeat: ElementRef<HTMLInputElement> | null = null;
 
 
-    private readonly authService = inject(Auth);
+    private readonly auth = inject(Auth);
     private readonly router = inject(Router);
 
     public errorMessage$ = new BehaviorSubject<null | string>(null);
 
 
-    public onSubmit(ev: SubmitEvent)
+    public onRegisterSubmit(ev: SubmitEvent)
     {
         ev.preventDefault();
 
@@ -47,7 +47,7 @@ export class Register
             return;
         }
 
-        this.authService.signIn(username, password).subscribe((ok) =>
+        this.auth.signIn(username, password).subscribe((ok) =>
         {
             if (ok === null) return;
 
