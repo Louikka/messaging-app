@@ -1,6 +1,39 @@
 import type { DBChat, DBChatMessage } from './server/lib/db';
 
 
+export interface UserCredentials {
+    username: string;
+    password: string;
+}
+
+
+export interface AppUser {
+    username: string;
+    active_chats: Array<string>;
+    own_chats: Array<string>;
+}
+
+export interface AppChat extends DBChat {
+    //
+}
+
+
+
+export interface POSTLogin extends UserCredentials {
+    //
+}
+
+export interface POSTLoginResponse {
+    token: string;
+}
+
+
+export interface POSTChatCreate {
+    /** Name of the chat. */
+    name: string;
+}
+
+
 export namespace API {
 
     namespace register {
@@ -65,7 +98,10 @@ export namespace API {
                 }
             }
             namespace res {
-                type body = string;
+                interface body {
+                    chat_name: string;
+                    chat_id: string;
+                }
             }
         }
 

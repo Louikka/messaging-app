@@ -5,7 +5,7 @@ import { expressjwt, type Request as JWTRequest } from 'express-jwt';
 
 import { RedisClient, type DBChatMessage } from './lib/db.ts';
 import { verifyPassword } from './lib/lib.ts';
-import type { API } from '../api.d.ts';
+import type { API, AppChat, AppUser, POSTChatCreate, POSTLogin, POSTLoginResponse, UserCredentials } from '../api.d.ts';
 
 
 try
@@ -84,7 +84,7 @@ app.get('/', (req, res) =>
 
 app.post('/api/register', async (req, res) =>
 {
-    const { username, password } = req.body as API.register.post.req.body;
+    const { username, password } = req.body as POSTLogin;
 
     if (await db.isUserExists(username))
     {
@@ -98,13 +98,13 @@ app.post('/api/register', async (req, res) =>
 
     res.json({
         token: jwt.sign({ username }, JWT_PRIVATE_KEY),
-    } as API.register.post.res.body);
+    } as POSTLoginResponse);
 });
 
 
 app.post('/api/login', async (req, res) =>
 {
-    const { username, password } = req.body as API.login.post.req.body;
+    const { username, password } = req.body as POSTLogin;
 
     const user = await db.getUser(username);
     if (user === null || !verifyPassword(password, user.password, user.salt))
@@ -117,7 +117,7 @@ app.post('/api/login', async (req, res) =>
 
     res.json({
         token: jwt.sign({ username }, JWT_PRIVATE_KEY),
-    } as API.login.post.res.body);
+    }as POSTLoginResponse);
 });
 
 
@@ -138,11 +138,34 @@ app.get('/api/user', async (req: JWTRequest, res) =>
         username: user.username,
         active_chats: user.active_chats,
         own_chats: user.own_chats,
-    } as API.user.get.res.body);
+    } as AppUser);
 });
 
 
-app.get('/api/chat/:chatId', async (req: JWTRequest, res) =>
+app.post('/api/chat/create', async (req: JWTRequest, res) =>
+{
+    const jwtPayload = req.auth! ?? console.error('Cannot get JWT payload.');
+    const reqBody = req.body as POSTChatCreate;
+
+    const owner = jwtPayload['username'] as string;
+    const chatId = await db.addNewChat(reqBody.name, owner);
+    if (owner === undefined || chatId === null)
+    {
+        res.statusMessage = `Unable to create new chat.`;
+        res.status(500);
+        res.end();
+        return;
+    }
+
+    res.json({
+        id: chatId,
+        name: reqBody.name,
+        owner,
+    } as AppChat);
+});
+
+
+app.get('/api/chat/id/:chatId', async (req: JWTRequest, res) =>
 {
     const chatId = req.params['chatId'];
     if (typeof chatId !== 'string')
@@ -164,10 +187,11 @@ app.get('/api/chat/:chatId', async (req: JWTRequest, res) =>
 
     res.json({
         ...chat,
-    } as API.chat.get.res.body);
+    } as AppChat);
 });
 
-app.get('/api/chat/:chatId/messages', async (req: JWTRequest, res) =>
+
+app.get('/api/chat/id/:chatId/messages', async (req: JWTRequest, res) =>
 {
     const chatId = req.params['chatId'];
     if (typeof chatId !== 'string')
@@ -190,26 +214,7 @@ app.get('/api/chat/:chatId/messages', async (req: JWTRequest, res) =>
     res.json(chatMessages);
 });
 
-app.post('/api/chat', async (req: JWTRequest, res) =>
-{
-    // user request to create new chat
-
-    const jwtPayload = req.auth! ?? console.error('Cannot get JWT payload.');
-    const reqBody = req.body as API.chat.post.req.body;
-
-    const chatId = await db.addNewChat(reqBody.chat_name, jwtPayload['username']);
-    if (chatId === null)
-    {
-        res.statusMessage = `Unable to create new chat.`;
-        res.status(500);
-        res.end();
-        return;
-    }
-
-    res.send(chatId);
-});
-
-app.post('/api/chat/:chatId/messages', async (req: JWTRequest, res) =>
+app.post('/api/chat/id/:chatId/messages', async (req: JWTRequest, res) =>
 {
     const jwtPayload = req.auth! ?? console.error('Cannot get JWT payload.');
     const reqBody = req.body as API.chat.messages.post.req.body;
