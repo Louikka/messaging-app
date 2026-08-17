@@ -1,65 +1,80 @@
-import { Component, ElementRef, inject, ViewChild } from '@angular/core';
-import { Auth } from '../auth';
-import { BehaviorSubject } from 'rxjs';
+import { Component, inject, OnInit } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { Router } from '@angular/router';
+import { FormControl, FormGroup, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
+import { BehaviorSubject, distinctUntilChanged, filter } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Auth } from '../auth';
+import { disallowCharactersValidator, matchingPasswordsValidator } from '../custom-validators';
 
 
 @Component({
     selector: 'app-register',
-    imports: [ AsyncPipe ],
+    imports: [ AsyncPipe, ReactiveFormsModule ],
     templateUrl: './register.html',
     styleUrl: './register.css',
 })
-export class Register
+export class Register implements OnInit
 {
-    @ViewChild('registerUsername')
-    private registerUsername: ElementRef<HTMLInputElement> | null = null;
-    @ViewChild('registerPassword')
-    private registerPassword: ElementRef<HTMLInputElement> | null = null;
-    @ViewChild('registerPasswordRepeat')
-    private registerPasswordRepeat: ElementRef<HTMLInputElement> | null = null;
-
-
     private readonly auth = inject(Auth);
     private readonly router = inject(Router);
 
-    public errorMessage$ = new BehaviorSubject<null | string>(null);
+    public form = new FormGroup({
+        username: new FormControl('', [ Validators.required, Validators.minLength(3), disallowCharactersValidator(/\s/i) ]),
+        password: new FormControl('', [ Validators.required, Validators.minLength(3) ]),
+        repeatedPassword: new FormControl('', [ Validators.required, Validators.minLength(3) ]),
+    }, { validators: [ matchingPasswordsValidator ] });
+
+    public errorMessage$ = new BehaviorSubject<string | null>(null);
 
 
-    public onRegisterSubmit(ev: SubmitEvent)
+    ngOnInit()
     {
-        ev.preventDefault();
-
-        const username = this.registerUsername?.nativeElement.value;
-        const password = this.registerPassword?.nativeElement.value;
-        const passwordRepeat = this.registerPasswordRepeat?.nativeElement.value;
-
-        if (username === undefined || password === undefined || passwordRepeat === undefined)
-        {
-            this.errorMessage$.next('Undefined username of password.');
-            return;
-        }
-
-        if (password !== passwordRepeat)
-        {
-            this.errorMessage$.next('Passwords are not matching.');
-            return;
-        }
-
-        this.auth.signIn(username, password).subscribe((ok) =>
-        {
-            if (ok === null) return;
-
-            if (ok)
+        this.form.controls.username.statusChanges
+            .subscribe(status =>
             {
-                this.router.navigate([ '/chat' ]);
-                this.errorMessage$.next(null);
-            }
-            else
+                if (status === 'INVALID')
+                {
+                    // report that username contains invalid characters
+                }
+            });
+    }
+
+    public onSubmit()
+    {
+        if (this.form.valid)
+        {
+            const username = this.form.value.username!.trim();
+            const password = this.form.value.password!.trim();
+
+            this.auth.signIn(username, password).subscribe({
+                complete: () =>
+                {
+                    //this.router.navigate([ '/chat' ]);
+                    alert('Registration was successfull.');
+                    this.errorMessage$.next(null);
+                },
+                error: (err) =>
+                {
+                    if (err instanceof HttpErrorResponse)
+                    {
+                        console.log(err);
+                        this.errorMessage$.next(err.statusText);
+                    }
+                    else
+                    {
+                        console.debug(err);
+                        this.errorMessage$.next('Unknown error occured.');
+                    }
+                },
+            });
+        }
+        else
+        {
+            if (!this.form.controls.username.valid || !this.form.controls.password.valid)
             {
-                this.errorMessage$.next('An error occured.');
+                this.errorMessage$.next('Please, provide valid username and password.');
             }
-        });
+        }
     }
 }

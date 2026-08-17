@@ -2,7 +2,6 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, ReplaySubject } from 'rxjs';
 import { webSocket } from 'rxjs/webSocket';
-import { API, ChatMessage } from '../types/server_api_typings';
 import { Auth } from './auth';
 
 
@@ -28,29 +27,29 @@ export class Messages
 {
     constructor()
     {
-        this.getMessages().subscribe((val) =>
-        {
-            for (const m of val)
-            {
-                this.messages$.next(this.newDisplayMessage(m));
-            }
-        });
+        // this.getMessages().subscribe((val) =>
+        // {
+        //     for (const m of val)
+        //     {
+        //         this.messages$.next(this.newDisplayMessage(m));
+        //     }
+        // });
 
-        this.ws$.subscribe((val) =>
-        {
-            this.messages$.next(this.newDisplayMessage(val));
-        });
+        // this.ws$.subscribe((val) =>
+        // {
+        //     this.messages$.next(this.newDisplayMessage(val));
+        // });
     }
 
 
     private readonly http = inject(HttpClient);
-    private readonly ws$ = webSocket<ChatMessage>(`ws://${window.location.hostname}:8080`);
+    //private readonly ws$ = webSocket<ChatMessage>(`ws://${window.location.hostname}:8080`);
 
     public readonly messages$ = new ReplaySubject<ChatDisplayContent>();
 
 
     /** Constructor for new display message. */
-    public newDisplayMessage(from: ChatMessage): ChatDisplayMessage
+    public newDisplayMessage(from: any): ChatDisplayMessage
     {
         return {
             type: 'message',
@@ -70,10 +69,10 @@ export class Messages
     }
 
 
-    public getMessages(): Observable<ChatMessage[]>
-    {
-        return this.http.get<ChatMessage[]>('/api/messages');
-    }
+    // public getMessages(): Observable<ChatMessage[]>
+    // {
+    //     return this.http.get<ChatMessage[]>('/api/messages');
+    // }
 
     public sendMessage(message: string): Observable<null | boolean>
     {
@@ -84,7 +83,7 @@ export class Messages
         // http.post won't work unless subscribed ("cold" observable)
         this.http.post(
             '/api/messages',
-            JSON.stringify({ message } as API.messages.post.req.body),
+            JSON.stringify({ message }),
             { headers }
         ).subscribe({
             next: (val) =>

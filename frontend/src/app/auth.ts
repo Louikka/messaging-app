@@ -49,14 +49,15 @@ export class Auth
 
 
 
-    private authUser(url: '/register' | '/login', username: string, password: string)
+    /** Returns token if successfull. */
+    private authUser(on: 'register' | 'login', username: string, password: string): Observable<string>
     {
         const body: POSTLogin = {
             username,
             password,
         };
 
-        return this.http.post<POSTLoginResponse>('/api' + url, body, {
+        return this.http.post<POSTLoginResponse>('/api/' + on, body, {
             headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
         }).pipe(
             map(v => v.token),
@@ -73,16 +74,17 @@ export class Auth
 
     public signIn(username: string, password: string): Observable<string>
     {
-        return this.authUser('/register', username, password);
+        return this.authUser('register', username, password);
     }
 
     public logIn(username: string, password: string): Observable<string>
     {
-        return this.authUser('/login', username, password);
+        return this.authUser('login', username, password);
     }
 
     public logOut()
     {
+        this.user$ = undefined;
         localStorage.removeItem('jwttoken');
     }
 

@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import redis from 'redis';
-import { createHashFromString, hashPassword } from './lib.ts';
+import { createHashFromString, hashPassword } from './lib.js';
 
 
 export interface DBUser {
