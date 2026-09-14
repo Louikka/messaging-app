@@ -2,19 +2,19 @@
     <div class="app-area  h-full p-4">
         <form class="w-full h-full flex flex-col justify-center items-center gap-2" [formGroup]="form" (ngSubmit)="onSubmit()">
             <label>
-                Name of the chat to join :
+                ID of the chat to join :
                 <input
                     class="app-input  px-2 py-1"
                     type="text"
-                    placeholder="Chat name"
-                    formControlName="chatName"
+                    placeholder="Chat ID"
+                    formControlName="chatId"
                 />
             </label>
-            @if (form.controls.chatName.invalid && (form.controls.chatName.dirty || form.controls.chatName.touched))
+            @if (form.controls.chatId.invalid && (form.controls.chatId.dirty || form.controls.chatId.touched))
             {
-                @if (form.controls.chatName.hasError('required'))
+                @if (form.controls.chatId.hasError('required'))
                 {
-                    <div class="ml-1 text-sm text-red-500">Chat name is required.</div>
+                    <div class="ml-1 text-sm text-red-500">Chat ID is required.</div>
                 }
             }
             @if (errlogs.messages$ | async; as errorMessage)

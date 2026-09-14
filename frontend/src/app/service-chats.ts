@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { AppChat, POSTChatCreate } from '../../../api';
+import { POSTChatCreate, POSTChatCreateResponse, GETChatCreateResponse } from '../types/server_api';
 
 
 @Injectable({
@@ -19,14 +19,14 @@ export class ServiceChats
             name,
         };
 
-        return this.http.post<AppChat>('/api/chat/create', body, {
+        return this.http.post<POSTChatCreateResponse>('/api/chat/create', body, {
             headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
         });
     }
 
     public getChat(chatId: string)
     {
-        return this.http.post<AppChat>(`/api/chat/id/${chatId}`, null);
+        return this.http.get<GETChatCreateResponse>(`/api/chat/id/${chatId}`);
     }
 
     public getAllChats()

@@ -6,7 +6,7 @@ import { expressjwt, type Request as JWTRequest } from 'express-jwt';
 
 import { RedisClient, type DBChatMessage } from './lib/db.ts';
 import { verifyPassword, verifyUserRegisterCredentials } from './lib/lib.ts';
-import type { API, AppChat, AppUser, POSTChatCreate, POSTLogin, POSTLoginResponse, UserCredentials } from '../api.d.ts';
+import type { POSTChatMessages, POSTLogin, POSTChatCreate, POSTLoginResponse } from './types/api.js';
 
 
 try
@@ -147,7 +147,7 @@ app.get('/api/user', async (req: JWTRequest, res) =>
         username: user.username,
         active_chats: user.active_chats,
         own_chats: user.own_chats,
-    } as AppUser);
+    });
 });
 
 
@@ -170,7 +170,7 @@ app.post('/api/chat/create', async (req: JWTRequest, res) =>
         id: chatId,
         name: reqBody.name,
         owner,
-    } as AppChat);
+    });
 });
 
 
@@ -196,7 +196,7 @@ app.get('/api/chat/id/:chatId', async (req: JWTRequest, res) =>
 
     res.json({
         ...chat,
-    } as AppChat);
+    });
 });
 
 
@@ -226,10 +226,10 @@ app.get('/api/chat/id/:chatId/messages', async (req: JWTRequest, res) =>
 app.post('/api/chat/id/:chatId/messages', async (req: JWTRequest, res) =>
 {
     const jwtPayload = req.auth! ?? console.error('Cannot get JWT payload.');
-    const reqBody = req.body as API.chat.messages.post.req.body;
+    const reqBody = req.body as POSTChatMessages;
 
     const chatId = req.params['chatId'];
-    if (typeof chatId !== 'string')
+    if (typeof chatId !== 'string' || chatId.length === 0)
     {
         res.statusMessage = 'Chat ID required to be a valid value.';
         res.status(400);
@@ -243,17 +243,16 @@ app.post('/api/chat/id/:chatId/messages', async (req: JWTRequest, res) =>
         timestamp: Date.now(),
     } as DBChatMessage;
 
+    // send messages through websocket
+    for (const ws of wss.clients)
+    {
+        if (ws.readyState == ws.OPEN)
+        {
+            ws.send(JSON.stringify(userChatMessage));
+        }
+    }
+
     db.addChatMessage(chatId, userChatMessage);
-
-
-    // sending new message via ws
-    // for (const ws of wss.clients)
-    // {
-    //     if (ws.readyState === ws.OPEN)
-    //     {
-    //         ws.send(JSON.stringify(userChatMessage));
-    //     }
-    // }
 
     res.status(204);
     res.end();

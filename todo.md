@@ -1,8 +1,7 @@
 # todo
 
 ## Short-term
-- redo Messages service
-- reimplement websockets
+- make chats private (block direct access)
 
 
 ## Long-term

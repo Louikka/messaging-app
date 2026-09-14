@@ -1,7 +1,9 @@
 import { AsyncPipe } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
 import { ErrorMessages } from '../error-messages';
+import { Router } from '@angular/router';
+import { ServiceChats } from '../service-chats';
 
 
 @Component({
@@ -12,8 +14,11 @@ import { ErrorMessages } from '../error-messages';
 })
 export class ChatsRoomJoin
 {
+    private readonly router = inject(Router);
+    private readonly chats = inject(ServiceChats);
+
     public form = new FormGroup({
-        chatName: new FormControl('', [ Validators.required ]),
+        chatId: new FormControl('', [ Validators.required ]),
     });
 
     public errlogs = new ErrorMessages();
@@ -21,12 +26,29 @@ export class ChatsRoomJoin
 
     public onSubmit()
     {
-        if (this.form.controls.chatName.invalid)
+        if (this.form.controls.chatId.invalid)
         {
-            this.errlogs.new('Please, provide valid chat name.');
+            this.errlogs.new('Please, provide valid chat id.');
             return;
         }
 
-        // process joining to chat
+        const chatId = this.form.value.chatId;
+        if (!chatId)
+        {
+            this.errlogs.new('Please, provide valid chat id.');
+            return;
+        }
+
+        this.chats.getChat(chatId).subscribe({ // fix
+            next: (v) =>
+            {
+                console.debug('Redirecting to the chat room...');
+                this.router.navigate([ 'chatsRoom', v.id ]);
+            },
+            error: (err) =>
+            {
+                console.error(err);
+            },
+        });
     }
 }

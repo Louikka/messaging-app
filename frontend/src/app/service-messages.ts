@@ -1,7 +1,8 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { ReplaySubject } from 'rxjs';
+import { BehaviorSubject, EMPTY } from 'rxjs';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
+import { POSTChatMessages } from '../types/server_api';
 
 
 interface WSMessage {
@@ -26,9 +27,11 @@ type ChatContent = ChatMessage | ChatError;
 export class ServiceMessages
 {
     private readonly http = inject(HttpClient);
-    private ws$: WebSocketSubject<WSMessage> | null = null;
 
-    public readonly messages$ = new ReplaySubject<ChatContent>();
+    private ws$: WebSocketSubject<WSMessage> | null = null;
+    private chatId: string | null = null;
+
+    public readonly messages$ = new BehaviorSubject<ChatContent[]>([]);
 
 
     public connect(chatId: string)
@@ -39,17 +42,24 @@ export class ServiceMessages
             throw new Error('Cannot get JWT token from localStorage.');
         }
 
+        this.chatId = chatId;
+
         this.ws$ = webSocket(`ws://${window.location.hostname}:8080?token=${token}&chatId=${chatId}`);
         this.ws$.subscribe({
             next: (val) =>
             {
-                this.messages$.next({
-                    type: 'message',
-                    ...val,
-                });
+                const existingMessages = this.messages$.getValue();
+                this.messages$.next([
+                    ...existingMessages,
+                    {
+                        type: 'message',
+                        ...val,
+                    },
+                ]);
             },
             error: (err) =>
             {
+                const existingMessages = this.messages$.getValue();
                 let errMessage: string;
 
                 if (err instanceof Error)
@@ -61,11 +71,14 @@ export class ServiceMessages
                     errMessage = String(err)
                 }
 
-                this.messages$.next({
-                    type: 'error',
-                    text: errMessage,
-                    timestamp: Date.now(),
-                });
+                this.messages$.next([
+                    ...existingMessages,
+                    {
+                        type: 'error',
+                        text: errMessage,
+                        timestamp: Date.now(),
+                    },
+                ]);
             },
         });
     }
@@ -74,6 +87,18 @@ export class ServiceMessages
     /** Sends message. */
     public send(message: string)
     {
-        //
+        if (this.chatId === null)
+        {
+            console.debug('cannot send message from ServiceMessages: chatId is null.');
+            return EMPTY;
+        }
+
+        const body: POSTChatMessages = {
+            message,
+        };
+
+        return this.http.post(`/api/chat/id/${this.chatId}/messages`, body, {
+            headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
+        });
     }
 }

@@ -1,19 +1,17 @@
 <div class="w-full h-full flex flex-col gap-4">
     <!-- display -->
     <div class="app-area scrollable  h-full py-4 px-1">
-        <!--
-        @for (message of messages$ | async; track message)
+        @for (message of messages.messages$ | async; track message)
         {
             @if (message.type === 'message')
             {
-                <div class="log-message">{{ message.user }}: {{ message.text }}</div>
+                <div class="log-message">{{ message.username }}: {{ message.text }}</div>
             }
             @else if (message.type === 'error')
             {
                 <div class="log-error font-mono">{{ message.text }}</div>
             }
         }
-        -->
     </div>
 
     <!-- input -->

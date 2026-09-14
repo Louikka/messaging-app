@@ -1,7 +1,14 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { catchError, map, Observable, shareReplay, tap, throwError } from 'rxjs';
-import { AppUser, POSTLogin, POSTLoginResponse } from '../../../api';
+import { POSTLogin, POSTLoginResponse } from '../types/server_api';
+
+
+export interface AppUser {
+    username: string;
+    active_chats: Array<string>;
+    own_chats: Array<string>;
+}
 
 
 @Injectable({
