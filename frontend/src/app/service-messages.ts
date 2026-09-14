@@ -44,6 +44,8 @@ export class ServiceMessages
 
         this.chatId = chatId;
 
+        // retrive messages history (get /api/chat/id/<chatId>/messages)
+
         this.ws$ = webSocket(`ws://${window.location.hostname}:8080?token=${token}&chatId=${chatId}`);
         this.ws$.subscribe({
             next: (val) =>
@@ -68,7 +70,14 @@ export class ServiceMessages
                 }
                 else
                 {
-                    errMessage = String(err)
+                    try
+                    {
+                        errMessage = JSON.stringify(err);
+                    }
+                    catch (err)
+                    {
+                        errMessage = String(err)
+                    }
                 }
 
                 this.messages$.next([
