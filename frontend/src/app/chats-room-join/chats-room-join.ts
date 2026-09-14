@@ -39,7 +39,7 @@ export class ChatsRoomJoin
             return;
         }
 
-        this.chats.getChat(chatId).subscribe({ // fix
+        this.chats.getChat(chatId).subscribe({
             next: (v) =>
             {
                 console.debug('Redirecting to the chat room...');
