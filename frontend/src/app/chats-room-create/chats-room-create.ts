@@ -5,6 +5,7 @@ import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angula
 import { ErrorMessages } from '../error-messages';
 import { ServiceChats } from '../service-chats';
 import { CustomValidators } from '../custom-validators';
+import { Router } from '@angular/router';
 
 
 @Component({
@@ -15,6 +16,7 @@ import { CustomValidators } from '../custom-validators';
 })
 export class ChatsRoomCreate
 {
+    private readonly router = inject(Router);
     private readonly chats = inject(ServiceChats);
 
     public form = new FormGroup({
@@ -33,10 +35,11 @@ export class ChatsRoomCreate
         }
 
         this.chats.addNewChat(this.form.value.chatName!).subscribe({
-            complete: () =>
+            next: (v) =>
             {
                 this.errlogs.clear();
-                //this.router.navigate([ '/' ]);
+                this.form.controls.chatName.reset();
+                this.router.navigate([ 'chatsRoom', v.id ]);
             },
             error: (err) =>
             {

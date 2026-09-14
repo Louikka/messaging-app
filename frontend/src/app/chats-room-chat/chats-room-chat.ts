@@ -9,6 +9,7 @@ import { ActivatedRoute } from '@angular/router';
     imports: [ ReactiveFormsModule ],
     templateUrl: './chats-room-chat.html',
     styleUrl: './chats-room-chat.css',
+    providers: [ ServiceMessages ],
 })
 export class ChatsRoomChat
 {
