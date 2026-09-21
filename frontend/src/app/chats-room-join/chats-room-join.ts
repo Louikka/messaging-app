@@ -44,6 +44,8 @@ export class ChatsRoomJoin
             {
                 console.debug('Redirecting to the chat room...');
                 this.router.navigate([ 'chatsRoom', v.id ]);
+
+                this.chats.updateChats();
             },
             error: (err) =>
             {

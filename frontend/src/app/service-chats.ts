@@ -1,6 +1,14 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { POSTChatCreate, POSTChatCreateResponse, GETChatCreateResponse } from '../types/server_api';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { POSTChatCreate, POSTChatCreateResponse, GETChatCreateResponse, GETUsetResponse } from '../types/server_api';
+
+
+interface Chat {
+    id: string;
+    name: string;
+    owner: string | null;
+}
 
 
 @Injectable({
@@ -10,10 +18,10 @@ export class ServiceChats
 {
     private readonly http = inject(HttpClient);
 
-    //public chatIDs$ = new BehaviorSubject<string[]>([]);
+    public chats$ = new BehaviorSubject<Chat[]>([]);
 
 
-    public addNewChat(name: string)
+    public addNewChat(name: string): Observable<POSTChatCreateResponse>
     {
         const body: POSTChatCreate = {
             name,
@@ -24,13 +32,18 @@ export class ServiceChats
         });
     }
 
-    public getChat(chatId: string)
+    public getChat(chatId: string): Observable<GETChatCreateResponse>
     {
         return this.http.get<GETChatCreateResponse>(`/api/chat/id/${chatId}`);
     }
 
-    public getAllChats()
+    /** Updates {@link chats$}. */
+    public updateChats()
     {
-        //
+        this.http.get<GETUsetResponse>(`/api/user`).subscribe((user) =>
+        {
+            // todo: merge active and own chats
+            this.chats$.next(user.active_chats);
+        });
     }
 }

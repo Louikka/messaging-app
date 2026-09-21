@@ -28,6 +28,13 @@ export interface DBChatMessage {
 }
 
 
+export interface APIUser {
+    username: string;
+    active_chats: Array<DBChat>;
+    own_chats: Array<Omit<DBChat, 'owner'>>;
+}
+
+
 /**
  * @param name primal identifier for key (converts to upper case).
  * @param val value that will be hashed and concatenated to the key.
@@ -81,47 +88,87 @@ export class RedisClient
 
     public async getUser(username: string): Promise<DBUser | null>
     {
-        if (await this.isUserExists(username))
-        {
-            try
-            {
-                const user = {} as DBUser;
-                const dbUser = await this.client.hGetAll(constructDBKey('USER', username));
-                for (const [key, value] of Object.entries(dbUser))
-                {
-                    switch (key)
-                    {
-                        case 'active_chats':
-                        {
-                            user.active_chats = JSON.parse(value);
-                            break;
-                        }
-                        case 'own_chats':
-                        {
-                            user.own_chats = JSON.parse(value);
-                            break;
-                        }
-
-                        default:
-                        {
-                            user[key as keyof Omit<DBUser, 'active_chats' | 'own_chats'>] = value;
-                        }
-                    }
-                }
-
-                return user;
-            }
-            catch (err)
-            {
-                console.error(err);
-            }
-        }
-        else
+        if (!await this.isUserExists(username))
         {
             console.debug(`Unable to get user "${username}".`);
+            return null;
         }
 
-        return null;
+        try
+        {
+            const user = {} as DBUser;
+            const dbUser = await this.client.hGetAll(constructDBKey('USER', username));
+            for (const [key, value] of Object.entries(dbUser))
+            {
+                switch (key)
+                {
+                    case 'active_chats':
+                    {
+                        user.active_chats = JSON.parse(value);
+                        break;
+                    }
+                    case 'own_chats':
+                    {
+                        user.own_chats = JSON.parse(value);
+                        break;
+                    }
+
+                    default:
+                    {
+                        user[key as keyof Omit<DBUser, 'active_chats' | 'own_chats'>] = value;
+                    }
+                }
+            }
+
+            return user;
+        }
+        catch (err)
+        {
+            console.error(err);
+            return null;
+        }
+    }
+
+    public async getUserDetailed(username: string): Promise<APIUser | null>
+    {
+        const dbUser = await this.getUser(username);
+        if (dbUser === null)
+        {
+            return null;
+        }
+
+        const activeChats: APIUser['active_chats'] = [];
+        for (const chatId of dbUser.active_chats)
+        {
+            const chat = await this.getChat(chatId)
+            if (chat === null)
+            {
+                continue;
+            }
+
+            activeChats.push(chat);
+        }
+
+        const ownChats: APIUser['own_chats'] = [];
+        for (const chatId of dbUser.own_chats)
+        {
+            const chat = await this.getChat(chatId)
+            if (chat === null)
+            {
+                continue;
+            }
+
+            ownChats.push({
+                id: chat.id,
+                name: chat.name,
+            });
+        }
+
+        return {
+            username: dbUser.username,
+            active_chats: activeChats,
+            own_chats: ownChats,
+        };
     }
 
     /**

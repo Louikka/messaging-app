@@ -3,6 +3,7 @@ import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
 import { ServiceMessages } from '../service-messages';
 import { ActivatedRoute } from '@angular/router';
 import { AsyncPipe } from '@angular/common';
+import { Subscription } from 'rxjs';
 
 
 @Component({
@@ -19,11 +20,12 @@ export class ChatsRoomChat
         this.activatedRoute.params.subscribe({
             next: (params) =>
             {
+                this.messages.disconnect();
+
                 const chatId = params['chatId'];
                 if (typeof chatId === 'string' && chatId)
                 {
-                    this.messages.connect(chatId); // fine in case of reconnect?
-                    console.debug('WebSocket connected successfully.');
+                    this.messages.connect(chatId);
                 }
             },
             error: (err) =>

@@ -2,6 +2,8 @@
 
 ## Short-term
 - make chats private (block direct access)
+- implement custom input (emoji support)
+- let join chats form accept URLs (?)
 
 
 ## Long-term

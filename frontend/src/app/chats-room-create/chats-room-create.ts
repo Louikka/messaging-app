@@ -40,6 +40,8 @@ export class ChatsRoomCreate
                 this.errlogs.clear();
                 this.form.controls.chatName.reset();
                 this.router.navigate([ 'chatsRoom', v.id ]);
+
+                this.chats.updateChats();
             },
             error: (err) =>
             {

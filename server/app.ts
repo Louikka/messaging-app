@@ -134,7 +134,7 @@ app.get('/api/user', async (req: JWTRequest, res) =>
 {
     const jwtPayload = req.auth! ?? console.error('Cannot get JWT payload.');
 
-    const user = await db.getUser(jwtPayload['username']);
+    const user = await db.getUserDetailed(jwtPayload['username']);
     if (user === null)
     {
         res.statusMessage = 'User does not exists or credentials are wrong.';

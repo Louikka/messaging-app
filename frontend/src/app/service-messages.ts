@@ -2,7 +2,8 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { BehaviorSubject, EMPTY } from 'rxjs';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
-import { POSTChatMessages } from '../types/server_api';
+import { GETChatMessagesResponse, POSTChatMessages } from '../types/server_api';
+import { anyErrorToString } from '../lib/lib';
 
 
 interface WSMessage {
@@ -44,9 +45,9 @@ export class ServiceMessages
 
         this.chatId = chatId;
 
-        // retrive messages history (get /api/chat/id/<chatId>/messages)
-
         this.ws$ = webSocket(`ws://${window.location.hostname}:8080?token=${token}&chatId=${chatId}`);
+        console.debug(`[CHAT:${chatId}] Created new WebSocket.`);
+
         this.ws$.subscribe({
             next: (val) =>
             {
@@ -62,34 +63,42 @@ export class ServiceMessages
             error: (err) =>
             {
                 const existingMessages = this.messages$.getValue();
-                let errMessage: string;
-
-                if (err instanceof Error)
-                {
-                    errMessage = err.message;
-                }
-                else
-                {
-                    try
-                    {
-                        errMessage = JSON.stringify(err);
-                    }
-                    catch (err)
-                    {
-                        errMessage = String(err)
-                    }
-                }
-
                 this.messages$.next([
                     ...existingMessages,
                     {
                         type: 'error',
-                        text: errMessage,
+                        text: anyErrorToString(err),
                         timestamp: Date.now(),
                     },
                 ]);
             },
+            complete: () =>
+            {
+                console.debug(`[CHAT:${chatId}] WebSocket closed.`);
+                this.messages$.next([]);
+            }
         });
+
+        this.update();
+    }
+
+    public disconnect()
+    {
+        this.ws$?.complete()
+    }
+
+    public update()
+    {
+        if (this.chatId !== null)
+        {
+            this.http.get<GETChatMessagesResponse>(`/api/chat/id/${this.chatId}/messages`).subscribe((messages) =>
+            {
+                this.messages$.next(messages.map(o => ({
+                    type: 'message',
+                    ...o,
+                })));
+            });
+        }
     }
 
 

@@ -7,14 +7,14 @@
                 <input class="app-button  px-3 py-1 text-lg" type="button" value="Join chat" (click)="navigateToJoinChat()" />
             </div>
 
-            <!-- user chats -->
+            <!-- chats list -->
             <div class="mt-4 flex flex-col gap-2">
-                <!--
-                @for (chat of auth.userData?.active_chats; track chat)
+                @for (chat of chats.chats$ | async; track chat)
                 {
-                    <div>Chat "{{ chat }}"</div>
+                    <button class="px-3 rounded-xl hover:bg-neutral-950/8" (click)="navigateToChat(chat.id)">
+                        Chat "{{ chat.name }}"
+                    </button>
                 }
-                -->
             </div>
         </div>
     </aside>
