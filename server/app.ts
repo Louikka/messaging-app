@@ -1,12 +1,13 @@
 import http from 'http';
 import express from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { WebSocketServer } from 'ws';
 import jwt from 'jsonwebtoken';
 import { expressjwt, type Request as JWTRequest } from 'express-jwt';
 
 import { RedisClient, type DBChatMessage } from './lib/db.ts';
 import { verifyPassword, verifyUserRegisterCredentials } from './lib/lib.ts';
-import type { POSTChatMessages, POSTLogin, POSTChatCreate, POSTLoginResponse } from './types/api.js';
+import type { POSTChatMessages, POSTLogin, POSTChatCreate } from './types/api.d.ts';
 
 
 try
@@ -60,26 +61,71 @@ wss.on('connection', (ws) =>
 
 
 
-/* Express routing ***********************************************************/
+/* Express.js routing ********************************************************/
 
 const app = express();
 
 const jwtMiddleware = expressjwt({ secret: JWT_PRIVATE_KEY, algorithms: [ 'HS256' ] });
-// const checkReqBody = (req: express.Request, res: express.Response, next: express.NextFunction) =>
-// {
-//     // ?
-//     next();
-// };
 
 // middleware to parse req.body as JSON
 app.use(express.json());
 app.use('/api', jwtMiddleware.unless({ path: [ '/api/register', '/api/login' ] }));
+app.use('/api/chat/id/:chatId', async (req, res, next) => // todo
+{
+    const username = parseUsernameFromJWTPayload(req, res);
+    if (username === null)
+    {
+        return; // todo
+    }
+
+    const chatID = parseChatIDFromParams(req, res);
+    if (chatID === null)
+    {
+        return; // todo
+    }
+
+    if (!(await db.isUserHasChat(username, chatID)))
+    {
+        res.sendStatus(403);
+    }
+});
+
+function parseUsernameFromJWTPayload(req: JWTRequest, res: Response): string | null
+{
+    const payload = req.auth;
+    if (payload === undefined)
+    {
+        res.status(400).send({ error: 'Cannot get JWT payload.' });
+        return null;
+    }
+
+    const username = payload['username'];
+    if (typeof username !== 'string')
+    {
+        res.status(400).send({ error: 'JWT payload key "username" not a string.' });
+        return null;
+    }
+
+    return username;
+}
+
+function parseChatIDFromParams(req: Request, res: Response): string | null
+{
+    const id = req.params['chatId'];
+    if (typeof id !== 'string' || id.length === 0)
+    {
+        res.status(400).send({ error: 'Chat ID required to be a valid value.' });
+        return null
+    }
+
+    return id;
+}
 
 
 
 app.get('/', (req, res) =>
 {
-    res.send(`<p>Hello, world!</p>`);
+    res.send('Hello, world!');
 });
 
 
@@ -89,17 +135,13 @@ app.post('/api/register', async (req, res) =>
 
     if (!verifyUserRegisterCredentials(username, password))
     {
-        res.statusMessage = 'User credentials are not valid.';
-        res.status(500);
-        res.end();
+        res.status(401).send({ error: 'Provided credentials are not valid.' });
         return;
     }
 
     if (await db.isUserExists(username))
     {
-        res.statusMessage = 'User already exists.';
-        res.status(500);
-        res.end();
+        res.status(409).send({ error: 'Such user already exists.' });
         return;
     }
 
@@ -107,7 +149,7 @@ app.post('/api/register', async (req, res) =>
 
     res.json({
         token: jwt.sign({ username }, JWT_PRIVATE_KEY),
-    } as POSTLoginResponse);
+    });
 });
 
 
@@ -118,28 +160,25 @@ app.post('/api/login', async (req, res) =>
     const user = await db.getUser(username);
     if (user === null || !verifyPassword(password, user.password, user.salt))
     {
-        res.statusMessage = 'User does not exists or credentials are wrong.';
-        res.status(401);
-        res.end();
+        res.status(401).send({ error: 'User does not exists or credentials are wrong.' });
         return;
     }
 
     res.json({
         token: jwt.sign({ username }, JWT_PRIVATE_KEY),
-    }as POSTLoginResponse);
+    });
 });
 
 
 app.get('/api/user', async (req: JWTRequest, res) =>
 {
-    const jwtPayload = req.auth! ?? console.error('Cannot get JWT payload.');
+    const username = parseUsernameFromJWTPayload(req, res);
+    if (username === null) return;
 
-    const user = await db.getUserDetailed(jwtPayload['username']);
+    const user = await db.getUserAPI(username);
     if (user === null)
     {
-        res.statusMessage = 'User does not exists or credentials are wrong.';
-        res.status(401);
-        res.end();
+        res.status(401).send({ error: 'User does not exists or credentials are wrong.' });
         return;
     }
 
@@ -153,22 +192,21 @@ app.get('/api/user', async (req: JWTRequest, res) =>
 
 app.post('/api/chat/create', async (req: JWTRequest, res) =>
 {
-    const jwtPayload = req.auth! ?? console.error('Cannot get JWT payload.');
-    const reqBody = req.body as POSTChatCreate;
+    const owner = parseUsernameFromJWTPayload(req, res);
+    if (owner === null) return;
 
-    const owner = jwtPayload['username'] as string;
-    const chatId = await db.addNewChat(reqBody.name, owner);
-    if (owner === undefined || chatId === null)
+    const { chatName } = req.body as POSTChatCreate;
+
+    const chatId = await db.addNewChat(chatName, owner);
+    if (chatId === null)
     {
-        res.statusMessage = `Unable to create new chat.`;
-        res.status(500);
-        res.end();
+        res.status(400).send({ error: 'Unable to create new chat.' });
         return;
     }
 
     res.json({
         id: chatId,
-        name: reqBody.name,
+        name: chatName,
         owner,
     });
 });
@@ -176,21 +214,13 @@ app.post('/api/chat/create', async (req: JWTRequest, res) =>
 
 app.get('/api/chat/id/:chatId', async (req: JWTRequest, res) =>
 {
-    const chatId = req.params['chatId'];
-    if (typeof chatId !== 'string')
-    {
-        res.statusMessage = 'Chat ID required to be a valid value.';
-        res.status(400);
-        res.end();
-        return;
-    }
+    const chatID = parseChatIDFromParams(req, res);
+    if (chatID === null) return;
 
-    const chat = await db.getChat(chatId);
+    const chat = await db.getChat(chatID);
     if (chat === null)
     {
-        res.statusMessage = `Chat with ID "${chatId}" was not found.`;
-        res.status(404);
-        res.end();
+        res.status(404).send({ error: `Chat with ID "${chatID}" was not found.` });
         return;
     }
 
@@ -202,21 +232,13 @@ app.get('/api/chat/id/:chatId', async (req: JWTRequest, res) =>
 
 app.get('/api/chat/id/:chatId/messages', async (req: JWTRequest, res) =>
 {
-    const chatId = req.params['chatId'];
-    if (typeof chatId !== 'string')
-    {
-        res.statusMessage = 'Chat ID required to be a valid value.';
-        res.status(400);
-        res.end();
-        return;
-    }
+    const chatID = parseChatIDFromParams(req, res);
+    if (chatID === null) return;
 
-    const chatMessages = await db.getChatMessages(chatId);
+    const chatMessages = await db.getChatMessages(chatID);
     if (chatMessages === null)
     {
-        res.statusMessage = `Chat with ID "${chatId}" was not found.`;
-        res.status(404);
-        res.end();
+        res.status(404).send({ error: `Chat with ID "${chatID}" was not found.` });
         return;
     }
 
@@ -225,21 +247,15 @@ app.get('/api/chat/id/:chatId/messages', async (req: JWTRequest, res) =>
 
 app.post('/api/chat/id/:chatId/messages', async (req: JWTRequest, res) =>
 {
-    const jwtPayload = req.auth! ?? console.error('Cannot get JWT payload.');
-    const reqBody = req.body as POSTChatMessages;
+    const username = parseUsernameFromJWTPayload(req, res);
+    if (username === null) return;
 
-    const chatId = req.params['chatId'];
-    if (typeof chatId !== 'string' || chatId.length === 0)
-    {
-        res.statusMessage = 'Chat ID required to be a valid value.';
-        res.status(400);
-        res.end();
-        return;
-    }
+    const chatID = parseChatIDFromParams(req, res);
+    if (chatID === null) return;
 
     const userChatMessage = {
-        username: jwtPayload['username'],
-        text: reqBody.message,
+        username,
+        text: (req.body as POSTChatMessages).message,
         timestamp: Date.now(),
     } as DBChatMessage;
 
@@ -252,10 +268,9 @@ app.post('/api/chat/id/:chatId/messages', async (req: JWTRequest, res) =>
         }
     }
 
-    db.addChatMessage(chatId, userChatMessage);
+    db.addChatMessage(chatID, userChatMessage);
 
-    res.status(204);
-    res.end();
+    res.sendStatus(204);
 });
 
 

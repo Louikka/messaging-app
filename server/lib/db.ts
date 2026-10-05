@@ -129,7 +129,7 @@ export class RedisClient
         }
     }
 
-    public async getUserDetailed(username: string): Promise<APIUser | null>
+    public async getUserAPI(username: string): Promise<APIUser | null>
     {
         const dbUser = await this.getUser(username);
         if (dbUser === null)
@@ -183,6 +183,13 @@ export class RedisClient
         }
 
         return await this.client.hSet(constructDBKey('USER', username), field, value);
+    }
+
+    public async isUserHasChat(username: string, chatId: string): Promise<boolean>
+    {
+        const user = await this.getUser(username);
+        if (user === null) return false;
+        return user.active_chats.includes(chatId);
     }
 
 

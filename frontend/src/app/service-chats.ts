@@ -24,7 +24,7 @@ export class ServiceChats
     public addNewChat(name: string): Observable<POSTChatCreateResponse>
     {
         const body: POSTChatCreate = {
-            name,
+            chatName: name,
         };
 
         return this.http.post<POSTChatCreateResponse>('/api/chat/create', body, {

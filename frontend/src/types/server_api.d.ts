@@ -1,3 +1,8 @@
+export interface ServerResponse {
+    error?: string;
+}
+
+
 export interface POSTLogin extends UserCredentials {
     //
 }
@@ -29,8 +34,7 @@ export interface GETUsetResponse {
 
 
 export interface POSTChatCreate {
-    /** Name of the chat. */
-    name: string;
+    chatName: string;
 }
 
 export interface POSTChatCreateResponse extends GETChatCreateResponse {
