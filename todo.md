@@ -1,9 +1,8 @@
 # todo
 
 ## Short-term
-- make chats private (block direct access)
-- implement custom input (emoji support)
-- let join chats form accept URLs (?)
+- fix chat joining (so can only join via friend link, etc..)
+    - fix routing to forbidden chats https://angular.dev/guide/routing/data-resolvers
 
 
 ## Long-term
@@ -13,3 +12,4 @@
 
 ## Also (not important)
 - fix/add styles
+- implement custom input (emoji support)

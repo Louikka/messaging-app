@@ -34,7 +34,6 @@ export function verifyPassword(password: string, hash: string, salt: string)
     return hashedPassword === hash;
 }
 
-
 export function verifyUserRegisterCredentials(username: string, password: string): boolean
 {
     if (!username || !password) return false;
@@ -51,19 +50,4 @@ export function verifyUserRegisterCredentials(username: string, password: string
         && correctUsernameLength
         && correctPasswordLength
     );
-}
-
-
-export function safeJSONParse<T>(s: string, fallbackValue: T): T
-{
-    try
-    {
-        return JSON.parse(s);
-    }
-    catch (err)
-    {
-        console.error(err);
-    }
-
-    return fallbackValue;
 }

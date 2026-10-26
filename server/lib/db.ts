@@ -185,11 +185,12 @@ export class RedisClient
         return await this.client.hSet(constructDBKey('USER', username), field, value);
     }
 
-    public async isUserHasChat(username: string, chatId: string): Promise<boolean>
+    /** Checks if user has specified chat ID in `active_chats`. */
+    public async isUserInChat(username: string, chatID: string): Promise<boolean>
     {
         const user = await this.getUser(username);
         if (user === null) return false;
-        return user.active_chats.includes(chatId);
+        return user.active_chats.includes(chatID);
     }
 
 

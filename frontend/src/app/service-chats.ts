@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, catchError, map, Observable, of } from 'rxjs';
 import { POSTChatCreate, POSTChatCreateResponse, GETChatCreateResponse, GETUsetResponse } from '../types/server_api';
 
 
@@ -21,10 +21,18 @@ export class ServiceChats
     public chats$ = new BehaviorSubject<Chat[]>([]);
 
 
+    // public isUserInChat(chatID: string): Observable<boolean>
+    // {
+    //     return this.http.get<GETChatCreateResponse>(`/api/chat/id/${chatID}`).pipe(
+    //         map((v) => true),
+    //         catchError((err) => of(false)),
+    //     );
+    // }
+
     public addNewChat(name: string): Observable<POSTChatCreateResponse>
     {
         const body: POSTChatCreate = {
-            chatName: name,
+            chat_name: name,
         };
 
         return this.http.post<POSTChatCreateResponse>('/api/chat/create', body, {
@@ -32,9 +40,9 @@ export class ServiceChats
         });
     }
 
-    public getChat(chatId: string): Observable<GETChatCreateResponse>
+    public getChat(chatID: string): Observable<GETChatCreateResponse>
     {
-        return this.http.get<GETChatCreateResponse>(`/api/chat/id/${chatId}`);
+        return this.http.get<GETChatCreateResponse>(`/api/chat/id/${chatID}`);
     }
 
     /** Updates {@link chats$}. */

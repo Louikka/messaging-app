@@ -34,7 +34,7 @@ export interface GETUsetResponse {
 
 
 export interface POSTChatCreate {
-    chatName: string;
+    chat_name: string;
 }
 
 export interface POSTChatCreateResponse extends GETChatCreateResponse {

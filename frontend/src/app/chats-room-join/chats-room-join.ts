@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angula
 import { ErrorMessages } from '../error-messages';
 import { Router } from '@angular/router';
 import { ServiceChats } from '../service-chats';
+import { HttpErrorResponse } from '@angular/common/http';
 
 
 @Component({
@@ -18,28 +19,28 @@ export class ChatsRoomJoin
     private readonly chats = inject(ServiceChats);
 
     public form = new FormGroup({
-        chatId: new FormControl('', [ Validators.required ]),
+        chatID: new FormControl('', [ Validators.required ]),
     });
 
-    public errlogs = new ErrorMessages();
+    public readonly errlogs = new ErrorMessages();
 
 
     public onSubmit()
     {
-        if (this.form.controls.chatId.invalid)
+        if (this.form.controls.chatID.invalid)
         {
             this.errlogs.new('Please, provide valid chat id.');
             return;
         }
 
-        const chatId = this.form.value.chatId;
-        if (!chatId)
+        const chatID = this.form.value.chatID;
+        if (!chatID)
         {
             this.errlogs.new('Please, provide valid chat id.');
             return;
         }
 
-        this.chats.getChat(chatId).subscribe({
+        this.chats.getChat(chatID).subscribe({
             next: (v) =>
             {
                 console.debug('Redirecting to the chat room...');
@@ -50,6 +51,10 @@ export class ChatsRoomJoin
             error: (err) =>
             {
                 console.error(err);
+                if (err instanceof HttpErrorResponse)
+                {
+                    this.errlogs.new(err.error.error);
+                }
             },
         });
     }

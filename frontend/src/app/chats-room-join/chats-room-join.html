@@ -7,12 +7,12 @@
                     class="app-input  px-2 py-1"
                     type="text"
                     placeholder="Chat ID"
-                    formControlName="chatId"
+                    formControlName="chatID"
                 />
             </label>
-            @if (form.controls.chatId.invalid && (form.controls.chatId.dirty || form.controls.chatId.touched))
+            @if (form.controls.chatID.invalid && (form.controls.chatID.dirty || form.controls.chatID.touched))
             {
-                @if (form.controls.chatId.hasError('required'))
+                @if (form.controls.chatID.hasError('required'))
                 {
                     <div class="ml-1 text-sm text-red-500">Chat ID is required.</div>
                 }
