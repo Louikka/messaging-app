@@ -24,15 +24,12 @@ export function hashPassword(password: string): HashedPassword
     return { hash, salt };
 }
 
-/**
- * @param password password to verify.
- * @param hash password to verify against.
- */
-export function verifyPassword(password: string, hash: string, salt: string)
+export function validatePassword(password: string, hash: string, salt: string)
 {
     const hashedPassword = crypto.scryptSync(password, salt, 64).toString('hex');
     return hashedPassword === hash;
 }
+
 
 export function verifyUserRegisterCredentials(username: string, password: string): boolean
 {
@@ -49,5 +46,14 @@ export function verifyUserRegisterCredentials(username: string, password: string
         && !passwordIncludesForbiddenSymbols
         && correctUsernameLength
         && correctPasswordLength
+    );
+}
+
+
+export function isNonEmptyString(s: any): s is string
+{
+    return (
+        typeof s === 'string'
+        && s.length > 0
     );
 }
