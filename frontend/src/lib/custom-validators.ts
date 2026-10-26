@@ -23,7 +23,7 @@ export class CustomValidators
     /** String should not be empty. */
     static notEmpty(control: AbstractControl): ValidationErrors | null
     {
-        return null;
+        throw 'TODO';
     }
 
     static matchPasswords(control: AbstractControl): ValidationErrors | null

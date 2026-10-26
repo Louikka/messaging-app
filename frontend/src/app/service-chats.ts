@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject, catchError, map, Observable, of } from 'rxjs';
-import { POSTChatCreate, POSTChatCreateResponse, GETChatCreateResponse, GETUsetResponse } from '../types/server_api';
+import { BehaviorSubject } from 'rxjs';
+import { ServiceAuth } from './service-auth';
 
 
 interface Chat {
@@ -17,6 +17,7 @@ interface Chat {
 export class ServiceChats
 {
     private readonly http = inject(HttpClient);
+    private readonly auth = inject(ServiceAuth)
 
     public chats$ = new BehaviorSubject<Chat[]>([]);
 
@@ -29,26 +30,32 @@ export class ServiceChats
     //     );
     // }
 
-    public addNewChat(name: string): Observable<POSTChatCreateResponse>
+    public addNewChat(name: string)
     {
-        const body: POSTChatCreate = {
+        return this.http.post<{
+            id: string;
+            name: string;
+            owner: string;
+        }>('/api/chat/create', {
             chat_name: name,
-        };
-
-        return this.http.post<POSTChatCreateResponse>('/api/chat/create', body, {
+        }, {
             headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
         });
     }
 
-    public getChat(chatID: string): Observable<GETChatCreateResponse>
+    public getChat(chatID: string)
     {
-        return this.http.get<GETChatCreateResponse>(`/api/chat/id/${chatID}`);
+        return this.http.get<{
+            id: string;
+            name: string;
+            owner: string;
+        }>(`/api/chat/id/${chatID}`);
     }
 
     /** Updates {@link chats$}. */
     public updateChats()
     {
-        this.http.get<GETUsetResponse>(`/api/user`).subscribe((user) =>
+        this.auth.getUser().subscribe((user) =>
         {
             // todo: merge active and own chats
             this.chats$.next(user.active_chats);

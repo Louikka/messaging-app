@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
 import { loginGuard } from './login-guard';
+import { chatsResolver } from './chats-resolver';
+
 import { Home } from './home/home';
 import { Register } from './register/register';
 import { Login } from './login/login';
@@ -40,6 +42,9 @@ export const routes: Routes = [
             {
                 path: ':chatId',
                 component: ChatsRoomChat,
+                resolve: {
+                    chat: chatsResolver,
+                },
             },
         ],
     },

@@ -4,7 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ServiceAuth } from '../service-auth';
-import { ErrorMessages } from '../error-messages';
+import { ErrorMessages } from '../../lib/error-messages';
 
 
 @Component({
@@ -42,15 +42,8 @@ export class Login
             },
             error: (err) =>
             {
-                if (err instanceof HttpErrorResponse && err.statusText)
-                {
-                    this.errlogs.new(err.statusText);
-                }
-                else
-                {
-                    console.debug(err);
-                    this.errlogs.new('Unknown error occured.');
-                }
+                console.debug(err);
+                this.errlogs.new('Unknown error occured.');
             },
         });
     }

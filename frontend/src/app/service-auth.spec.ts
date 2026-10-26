@@ -1,20 +1,25 @@
 import { TestBed } from '@angular/core/testing';
-import { Auth } from './auth';
+import { ServiceAuth } from './service-auth';
 
 
-describe('Auth', () =>
+describe('ServiceAuth', () =>
 {
-    let service: Auth;
+    let service: ServiceAuth;
 
     beforeEach(() =>
     {
         TestBed.configureTestingModule({});
-        service = TestBed.inject(Auth);
+        service = TestBed.inject(ServiceAuth);
     });
 
 
     it('should be created', () =>
     {
         expect(service).toBeTruthy();
+    });
+
+    it('should be initialised correctly', () =>
+    {
+        expect(service.isLoggedIn()).toBe(false);
     });
 });

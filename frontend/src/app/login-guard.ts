@@ -13,7 +13,6 @@ export const loginGuard: CanActivateFn = (route, state) =>
         return true;
     }
 
-    return new RedirectCommand(router.parseUrl('/login'), {
-        skipLocationChange: true,
-    });
+    console.debug(`Cannot navigate to the ${state.url}: access denied. Redirecting to the /login...`);
+    return new RedirectCommand(router.parseUrl('/login'));
 };

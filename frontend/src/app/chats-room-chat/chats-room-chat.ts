@@ -3,7 +3,6 @@ import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
 import { ServiceMessages } from '../service-messages';
 import { ActivatedRoute } from '@angular/router';
 import { AsyncPipe } from '@angular/common';
-import { Subscription } from 'rxjs';
 
 
 @Component({

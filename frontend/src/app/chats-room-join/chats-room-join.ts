@@ -1,7 +1,7 @@
 import { AsyncPipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
-import { ErrorMessages } from '../error-messages';
+import { ErrorMessages } from '../../lib/error-messages';
 import { Router } from '@angular/router';
 import { ServiceChats } from '../service-chats';
 import { HttpErrorResponse } from '@angular/common/http';

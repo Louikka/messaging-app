@@ -2,8 +2,6 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { BehaviorSubject, EMPTY } from 'rxjs';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
-import { GETChatMessagesResponse, POSTChatMessages } from '../types/server_api';
-import { anyErrorToString } from '../lib/lib';
 
 
 interface WSMessage {
@@ -37,7 +35,7 @@ export class ServiceMessages
 
     public connect(chatId: string)
     {
-        const token = localStorage.getItem('jwttoken');
+        const token = sessionStorage.getItem('jwttoken');
         if (token === null)
         {
             throw new Error('Cannot get JWT token from localStorage.');
@@ -67,7 +65,7 @@ export class ServiceMessages
                     ...existingMessages,
                     {
                         type: 'error',
-                        text: anyErrorToString(err),
+                        text: String(err),
                         timestamp: Date.now(),
                     },
                 ]);
@@ -91,7 +89,11 @@ export class ServiceMessages
     {
         if (this.chatId !== null)
         {
-            this.http.get<GETChatMessagesResponse>(`/api/chat/id/${this.chatId}/messages`).subscribe((messages) =>
+            this.http.get<{
+                username: string;
+                text: string;
+                timestamp: number;
+            }[]>(`/api/chat/id/${this.chatId}/messages`).subscribe((messages) =>
             {
                 this.messages$.next(messages.map(o => ({
                     type: 'message',
@@ -111,11 +113,9 @@ export class ServiceMessages
             return EMPTY;
         }
 
-        const body: POSTChatMessages = {
+        return this.http.post(`/api/chat/id/${this.chatId}/messages`, {
             message,
-        };
-
-        return this.http.post(`/api/chat/id/${this.chatId}/messages`, body, {
+        }, {
             headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
         });
     }

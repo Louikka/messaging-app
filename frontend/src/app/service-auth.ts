@@ -1,14 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { catchError, map, Observable, shareReplay, tap, throwError } from 'rxjs';
-import { POSTLogin, POSTLoginResponse } from '../types/server_api';
-
-
-export interface AppUser {
-    username: string;
-    active_chats: Array<string>;
-    own_chats: Array<string>;
-}
+import { catchError, map, Observable, shareReplay, tap } from 'rxjs';
 
 
 @Injectable({
@@ -18,20 +10,20 @@ export class ServiceAuth
 {
     private readonly http = inject(HttpClient);
 
-    private user$?: Observable<AppUser>;
+    private user$?: Observable<DataUser>;
 
-    public getUser(): Observable<AppUser>
+    public getUser(forceRefresh = false): Observable<DataUser>
     {
-        if (this.user$ === undefined)
+        if (forceRefresh || this.user$ === undefined)
         {
-            this.user$ = this.http.get<AppUser>('/api/user', {
+            this.user$ = this.http.get<DataUser>('/api/user', {
                 headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
             }).pipe(
                 shareReplay({ bufferSize: 1, refCount: true }),
                 catchError((err) =>
                 {
                     this.user$ = undefined;
-                    return throwError(() => err);
+                    throw err;
                 }),
             );
         }
@@ -39,34 +31,27 @@ export class ServiceAuth
         return this.user$;
     }
 
-    /** Forces refresh of the user data. */
-    public forceRefresh(): Observable<AppUser>
-    {
-        this.user$ = undefined;
-        return this.getUser();
-    }
-
-
-
     /** Returns token if successfull. */
     private authUser(on: 'register' | 'login', username: string, password: string): Observable<string>
     {
-        const body: POSTLogin = {
+        const body = {
             username,
             password,
         };
 
-        return this.http.post<POSTLoginResponse>('/api/' + on, body, {
-            headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
-        }).pipe(
-            map(v => v.token),
+        return this.http.post<{ token: string }>('/api/' + on,
+            {
+                username,
+                password,
+            },
+            {
+                headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
+            }
+        ).pipe(
+            map(o => o.token),
             tap((token) =>
             {
-                localStorage.setItem('jwttoken', token);
-            }),
-            catchError((err) =>
-            {
-                return throwError(() => err);
+                sessionStorage.setItem('jwttoken', token);
             }),
         );
     }
@@ -84,11 +69,11 @@ export class ServiceAuth
     public logOut()
     {
         this.user$ = undefined;
-        localStorage.removeItem('jwttoken');
+        sessionStorage.removeItem('jwttoken');
     }
 
     public isLoggedIn(): boolean
     {
-        return localStorage.getItem('jwttoken') !== null;
+        return sessionStorage.getItem('jwttoken') !== null;
     }
 }

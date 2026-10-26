@@ -4,8 +4,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ServiceAuth } from '../service-auth';
-import { CustomValidators } from '../custom-validators';
-import { ErrorMessages } from '../error-messages';
+import { CustomValidators } from '../../lib/custom-validators';
+import { ErrorMessages } from '../../lib/error-messages';
 
 
 @Component({

@@ -34,6 +34,6 @@ export class ChatsRoom
 
     public navigateToChat(chatId: string)
     {
-        this.router.navigate([ 'chatsRoom', chatId ]);
+        this.router.navigate([ `/chatsRoom/${chatId}` ]);
     }
 }
