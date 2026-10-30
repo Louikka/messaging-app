@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -11,6 +11,7 @@ import { ErrorMessages } from '../../lib/error-messages';
     selector: 'app-login',
     imports: [ AsyncPipe, ReactiveFormsModule ],
     templateUrl: './login.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './login.css',
 })
 export class Login

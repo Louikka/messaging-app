@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 
 
@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
     selector: 'app-home',
     imports: [],
     templateUrl: './home.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './home.css',
 })
 export class Home

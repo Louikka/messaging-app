@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { ServiceChats } from '../service-chats';
 import { AsyncPipe } from '@angular/common';
@@ -8,6 +8,7 @@ import { AsyncPipe } from '@angular/common';
     selector: 'app-chats-room',
     imports: [ RouterOutlet, AsyncPipe ],
     templateUrl: './chats-room.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './chats-room.css',
 })
 export class ChatsRoom

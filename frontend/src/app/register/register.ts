@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -12,6 +12,7 @@ import { ErrorMessages } from '../../lib/error-messages';
     selector: 'app-register',
     imports: [ AsyncPipe, ReactiveFormsModule ],
     templateUrl: './register.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './register.css',
 })
 export class Register

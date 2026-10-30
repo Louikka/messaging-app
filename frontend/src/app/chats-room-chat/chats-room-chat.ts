@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ReactiveFormsModule, FormGroup, FormControl } from '@angular/forms';
 import { ServiceMessages } from '../service-messages';
 import { ActivatedRoute } from '@angular/router';
@@ -10,6 +10,7 @@ import { AsyncPipe } from '@angular/common';
     imports: [ ReactiveFormsModule, AsyncPipe ],
     templateUrl: './chats-room-chat.html',
     styleUrl: './chats-room-chat.css',
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [ ServiceMessages ],
 })
 export class ChatsRoomChat
