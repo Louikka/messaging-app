@@ -9,14 +9,7 @@ import { RedisClient, type DBChatMessage } from './lib/db.ts';
 import { isNonEmptyString, validatePassword, verifyUserRegisterCredentials } from './lib/lib.ts';
 
 
-try
-{
-    process.loadEnvFile('./.env');
-}
-catch (err)
-{
-    console.error(err);
-}
+process.loadEnvFile('./.env');
 
 const SERVER_PORT = +(process.env['SERVER_PORT'] ?? 3000);
 const WSS_PORT = +(process.env['WSS_PORT'] ?? 8080);
