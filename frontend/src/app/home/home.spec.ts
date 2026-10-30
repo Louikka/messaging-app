@@ -2,22 +2,25 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { Home } from './home';
 
-describe('Home', () => {
-  let component: Home;
-  let fixture: ComponentFixture<Home>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [Home]
-    })
-    .compileComponents();
+describe('Home', () =>
+{
+    let component: Home;
+    let fixture: ComponentFixture<Home>;
 
-    fixture = TestBed.createComponent(Home);
-    component = fixture.componentInstance;
-    await fixture.whenStable();
-  });
+    beforeEach(async () =>
+    {
+        await TestBed.configureTestingModule({
+            imports: [Home],
+        }).compileComponents();
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+        fixture = TestBed.createComponent(Home);
+        component = fixture.componentInstance;
+        await fixture.whenStable();
+    });
+
+    it('should create', () =>
+    {
+        expect(component).toBeTruthy();
+    });
 });

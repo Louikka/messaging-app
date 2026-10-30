@@ -20,16 +20,10 @@ export class CustomValidators
         }
     }
 
-    /** String should not be empty. */
-    static notEmpty(control: AbstractControl): ValidationErrors | null
-    {
-        throw 'TODO';
-    }
-
     static matchPasswords(control: AbstractControl): ValidationErrors | null
     {
         const p1 = control.get('password');
-        const p2 = control.get('repeatedPassword');
+        const p2 = control.get('passwordRepeat');
 
         if (p1 === null || p2 === null || p1.value.trim() !== p2.value.trim())
         {

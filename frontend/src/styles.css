@@ -2,7 +2,6 @@
 
 @import "tailwindcss";
 
-
 @font-face {
     font-family : 'Noto Serif';
     src : url('./assets/fonts/Noto_Serif/NotoSerif-VariableFont_wdth\,wght.ttf');
@@ -41,22 +40,16 @@
 }
 
 
-html {
-    height : 100%;
-}
-
 body {
-    height : 100%;
-
-    font-family : 'Noto Sans', sans-serif;
-    font-optical-sizing : auto;
-    font-style : normal;
-    font-variation-settings :
-        "wdth" 100
-    ;
-    color : var(--app-font-color);
+    font-family: 'Noto Sans', sans-serif;
+    font-optical-sizing: auto;
+    font-variation-settings: "wdth" 100;
+    color: var(--app-font-color);
 }
 body[data-theme="light"] {
+    --app-bg: var(--color-neutral-200);
+
+
     --app-global-background-color : var(--color-neutral-100);
     --app-area-background-color : var(--color-neutral-200);
 
@@ -74,13 +67,13 @@ body[data-theme="dark"] {
 
 
 .font-serif {
-    font-family : 'Noto Serif', serif;
+    font-family: 'Noto Serif', serif;
 }
 .font-sans {
-    font-family : 'Noto Sans', sans-serif;
+    font-family: 'Noto Sans', sans-serif;
 }
 .font-mono {
-    font-family : 'Noto Sans Mono', monospace;
+    font-family: 'Noto Sans Mono', monospace;
 }
 
 :is(
@@ -88,7 +81,7 @@ body[data-theme="dark"] {
     input[type="submit"],
     button
 ):not(:disabled) {
-    cursor : pointer;
+    cursor: pointer;
 }
 
 .scrollable {

@@ -1,10 +1,136 @@
-<div class="background-pattern  w-full h-full flex">
-    <div class="grow"></div>
+<div class="w-full h-full flex justify-center items-center bg-(--app-bg)">
+    <div class="min-w-80 p-4 rounded-2xl bg-olive-300 shadow-md">
+        @if (formType === 'login')
+        {
+            <form class="w-full h-full flex flex-col gap-2" [formGroup]="formLogin" (ngSubmit)="onLoginSubmit()">
+                <div class="w-full">
+                    <input
+                        class="w-full p-1"
+                        type="text"
+                        placeholder="Username"
+                        autocomplete="username"
+                        formControlName="username"
+                    />
+                    @if (formLogin.controls.username.invalid && (formLogin.controls.username.dirty || formLogin.controls.username.touched))
+                    {
+                        @if (formLogin.controls.username.hasError('required'))
+                        {
+                            <span class="form-input-error-message">Username is required.</span>
+                        }
+                    }
+                </div>
 
-    <div class="w-100 h-full p-4 bg-(--app-global-background-color)">
-        <div class="mt-4 flex flex-col gap-2">
-            <input class="app-button  mt-2 px-3 py-1 text-lg" type="button" value="Sign In" (click)="onSignIn($event)" />
-            <input class="app-button  mt-2 px-3 py-1 text-lg" type="button" value="Log In" (click)="onLogIn($event)" />
-        </div>
+                <div class="w-full">
+                    <input
+                        class="w-full p-1"
+                        type="password"
+                        placeholder="Password"
+                        autocomplete="current-password"
+                        formControlName="password"
+                    />
+                    @if (formLogin.controls.password.invalid && (formLogin.controls.password.dirty || formLogin.controls.password.touched))
+                    {
+                        @if (formLogin.controls.password.hasError('required'))
+                        {
+                            <span class="form-input-error-message">Password is required.</span>
+                        }
+                    }
+                </div>
+
+                <div class="w-full mt-1">
+                    <input class="app-button  px-4 py-1 text-lg" type="submit" value="Log In" />
+                </div>
+
+                <div class="w-full ml-1 text-sm">
+                    Don't have an account yet? <input type="button" value="Sign in" (click)="switchFormType('register')" />
+                </div>
+            </form>
+        }
+        @else if (formType === 'register')
+        {
+            <form class="w-full h-full flex flex-col gap-2" [formGroup]="formRegister" (ngSubmit)="onRegisterSubmit()">
+                <div class="w-full">
+                    <input
+                        class="w-full p-1"
+                        type="text"
+                        placeholder="Username"
+                        autocomplete="username"
+                        formControlName="username"
+                    />
+                    @if (formRegister.controls.username.invalid && (formRegister.controls.username.dirty || formRegister.controls.username.touched))
+                    {
+                        @if (formRegister.controls.username.hasError('required'))
+                        {
+                            <span class="form-input-error-message">Username is required.</span>
+                        }
+                        @if (formRegister.controls.username.hasError('minlength'))
+                        {
+                            <span class="form-input-error-message">Username must be at least 3 characters long.</span>
+                        }
+                        @if (formRegister.controls.username.hasError('disallowedCharacters'))
+                        {
+                            <span class="form-input-error-message">Username contains disallowed characters.</span>
+                        }
+                    }
+                </div>
+
+                <div class="w-full">
+                    <input
+                        class="w-full p-1"
+                        type="password"
+                        placeholder="Password"
+                        autocomplete="new-password"
+                        formControlName="password"
+                    />
+                    @if (formRegister.controls.password.invalid && (formRegister.controls.password.dirty || formRegister.controls.password.touched))
+                    {
+                        @if (formRegister.controls.password.hasError('required'))
+                        {
+                            <span class="form-input-error-message">Password is required.</span>
+                        }
+                        @if (formRegister.controls.password.hasError('minlength'))
+                        {
+                            <span class="form-input-error-message">Password must be at least 3 characters long.</span>
+                        }
+                        @if (formRegister.controls.password.hasError('disallowedCharacters'))
+                        {
+                            <span class="form-input-error-message">Password contains disallowed characters.</span>
+                        }
+                    }
+                </div>
+
+                <div class="w-full">
+                    <input
+                        class="w-full p-1"
+                        type="password"
+                        placeholder="Password"
+                        formControlName="passwordRepeat"
+                    />
+                    @if (formRegister.controls.passwordRepeat.invalid && (formRegister.controls.passwordRepeat.dirty || formRegister.controls.passwordRepeat.touched))
+                    {
+                        @if (formRegister.controls.passwordRepeat.hasError('required'))
+                        {
+                            <span class="form-input-error-message">Password is required.</span>
+                        }
+                    }
+                    @if (formRegister.invalid && formRegister.hasError('mismatchedPasswords'))
+                    {
+                        <span class="form-input-error-message">Passwords are not matching.</span>
+                    }
+                </div>
+
+                <div class="w-full mt-1">
+                    <input class="app-button  px-4 py-1 text-lg" type="submit" value="Sign In" />
+                </div>
+
+                <div class="w-full ml-1 text-sm">
+                    Already have an account? <input type="button" value="Log in" (click)="switchFormType('login')" />
+                </div>
+            </form>
+        }
+        @else
+        {
+            <div>???</div>
+        }
     </div>
 </div>

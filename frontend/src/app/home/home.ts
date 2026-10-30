@@ -1,26 +1,71 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { CustomValidators } from '../../lib/custom-validators';
+import { ServiceAuth } from '../service-auth';
 
+
+type FormType = 'login' | 'register';
 
 @Component({
     selector: 'app-home',
-    imports: [],
     templateUrl: './home.html',
-    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './home.css',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    imports: [ ReactiveFormsModule ],
 })
 export class Home
 {
     private readonly router = inject(Router);
 
+    private readonly auth = inject(ServiceAuth);
 
-    public onSignIn(ev: Event)
+
+    public formType: FormType = 'login'; // default is login form
+
+    public formLogin = new FormGroup({
+        username: new FormControl('', [ Validators.required ]),
+        password: new FormControl('', [ Validators.required ]),
+    });
+
+    public formRegister = new FormGroup({
+        username: new FormControl('', [ Validators.required, Validators.minLength(3), CustomValidators.noChar(/\s/i) ]),
+        password: new FormControl('', [ Validators.required, Validators.minLength(3), CustomValidators.noChar(/\s/i) ]),
+        passwordRepeat: new FormControl('', [ Validators.required ]),
+    }, {
+        validators: [ CustomValidators.matchPasswords ]
+    });
+
+    public switchFormType(type: FormType)
     {
-        this.router.navigate([ '/register' ]);
+        if (type !== this.formType) this.formType = type;
     }
 
-    public onLogIn(ev: Event)
+    public onLoginSubmit()
     {
-        this.router.navigate([ '/login' ]);
+        this.auth.logIn(this.formLogin.value.username!, this.formLogin.value.password!).subscribe({
+            complete: () =>
+            {
+                this.router.navigate([ '/chatsRoom' ]);
+            },
+            error: (err) =>
+            {
+                console.debug(err);
+            },
+        });
+    }
+
+    public onRegisterSubmit()
+    {
+        this.auth.signIn(this.formRegister.value.username!, this.formRegister.value.password!).subscribe({
+            complete: () =>
+            {
+                this.router.navigate([ '/chatsRoom' ]);
+            },
+            error: (err) =>
+            {
+                console.debug(err);
+            },
+        });
     }
 }

@@ -1,0 +1,9 @@
+.form-input-error-message {
+    margin-left: calc(var(--spacing) * 1) /* 0.25rem = 4px */;
+
+    display: block;
+
+    font-size: var(--text-sm) /* 0.875rem = 14px */;
+    line-height: var(--tw-leading, var(--text-sm--line-height) /* calc(1.25 / 0.875) ≈ 1.428571 */);
+    color: var(--color-red-500) /* oklch(63.7% 0.237 25.331) = #fb2c36 */;
+}
