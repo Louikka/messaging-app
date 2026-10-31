@@ -21,7 +21,7 @@ export class Home
     private readonly auth = inject(ServiceAuth);
 
 
-    public formType: FormType = 'login'; // default is login form
+    public formType: FormType = 'login'; // login form as default
 
     public formLogin = new FormGroup({
         username: new FormControl('', [ Validators.required ]),
@@ -46,7 +46,7 @@ export class Home
         this.auth.logIn(this.formLogin.value.username!, this.formLogin.value.password!).subscribe({
             complete: () =>
             {
-                this.router.navigate([ '/chatsRoom' ]);
+                this.router.navigate([ '/' ]);
             },
             error: (err) =>
             {
@@ -60,7 +60,7 @@ export class Home
         this.auth.signIn(this.formRegister.value.username!, this.formRegister.value.password!).subscribe({
             complete: () =>
             {
-                this.router.navigate([ '/chatsRoom' ]);
+                this.router.navigate([ '/' ]);
             },
             error: (err) =>
             {

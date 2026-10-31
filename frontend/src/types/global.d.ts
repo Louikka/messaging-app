@@ -4,7 +4,7 @@ interface UserCredentials {
 }
 
 
-interface DataUser {
+interface APIUser {
     username: string;
     active_chats: Array<{
         id: string;

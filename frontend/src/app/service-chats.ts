@@ -57,6 +57,8 @@ export class ServiceChats
     {
         this.auth.getUser().subscribe((user) =>
         {
+            if (user === null) throw new Error('user is null');
+
             // todo: merge active and own chats
             this.chats$.next(user.active_chats);
         });

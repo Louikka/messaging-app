@@ -13,10 +13,10 @@ export const chatsResolver: ResolveFn<Observable<any | RedirectCommand>> = (rout
     return auth.getUser().pipe(
         map((user) =>
         {
-            if (user.active_chats.find(chat => chat.id === chatId) === undefined)
+            if (user === null || user.active_chats.find(chat => chat.id === chatId) === undefined)
             {
                 console.debug(`Unknown chat "${chatId}".`);
-                return new RedirectCommand(router.parseUrl('/chatsRoom'));
+                return new RedirectCommand(router.parseUrl('/'));
             }
 
             return true;
