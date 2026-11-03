@@ -82,15 +82,12 @@ export class RedisClient
         await this.client.hSet(userDBKey, 'salt', hashedPassword.salt);
         await this.client.hSet(userDBKey, 'active_chats', '[]');
         await this.client.hSet(userDBKey, 'own_chats', '[]');
-
-        console.debug('Successfully added new user: ', username);
     }
 
     public async getUser(username: string): Promise<DBUser | null>
     {
         if (!await this.isUserExists(username))
         {
-            console.debug(`Unable to get user "${username}".`);
             return null;
         }
 
@@ -174,7 +171,7 @@ export class RedisClient
     /**
      * @returns `-1` if an error occured, `0` if field already existed and get updated, `1` if new field was created.
      */
-    public async updateUser(username: string, field: keyof DBUser, value: any)
+    public async updateUser(username: string, field: keyof DBUser, value: any): Promise<number>
     {
         if (!await this.isUserExists(username))
         {
