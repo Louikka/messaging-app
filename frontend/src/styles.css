@@ -51,7 +51,7 @@ body {
 body[data-theme="light"] {
     --app-background-color: var(--color-neutral-200);
     --app-bg-color: var(--app-background-color);
-    --app-foreground-color: var(--color-olive-300);
+    --app-foreground-color: oklch(84% 0.011 106.6) /*var(--color-olive-300)*/;
     --app-fg-color: var(--app-foreground-color);
 
     --app-button-background-color: var(--color-neutral-600);
@@ -65,6 +65,14 @@ body[data-theme="dark"] {
 }
 
 
+:is(
+    input[type="button"],
+    input[type="submit"],
+    button
+):not(:disabled) {
+    cursor: pointer;
+}
+
 .font-serif {
     font-family: 'Noto Serif', serif;
 }
@@ -75,14 +83,6 @@ body[data-theme="dark"] {
     font-family: 'Noto Sans Mono', monospace;
 }
 
-:is(
-    input[type="button"],
-    input[type="submit"],
-    button
-):not(:disabled) {
-    cursor: pointer;
-}
-
 .scrollable {
     overflow : auto;
     scrollbar-width : thin;
@@ -91,4 +91,16 @@ body[data-theme="dark"] {
     overscroll-behavior : contain;
 
     min-height : 0;
+}
+
+
+.app-button {
+    background-color: var(--app-button-background-color);
+    border-radius: calc(infinity * 1px);
+
+    color: var(--app-button-text-color);
+
+    &:hover {
+        background-color: var(--app-button-background-color-hover);
+    }
 }

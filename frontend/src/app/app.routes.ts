@@ -1,9 +1,10 @@
 import { Routes } from '@angular/router';
 
-import { isLoggedIn } from './login-guard';
+import { loginGuard } from './login-guard';
 import { chatsResolver } from './chats-resolver';
 
-import { Home } from './home/home';
+import { Login } from './login/login';
+import { Register } from './register/register';
 import { ChatsRoom } from './chats-room/chats-room';
 import { ChatsRoomCreate } from './chats-room-create/chats-room-create';
 import { ChatsRoomJoin } from './chats-room-join/chats-room-join';
@@ -14,8 +15,8 @@ export const routes: Routes = [
     {
         path: '',
         component: ChatsRoom,
-        canMatch: [
-            isLoggedIn,
+        canActivate: [
+            loginGuard,
         ],
         children: [
             {
@@ -36,7 +37,11 @@ export const routes: Routes = [
         ],
     },
     {
-        path: '',
-        component: Home,
+        path: 'login',
+        component: Login,
+    },
+    {
+        path: 'register',
+        component: Register,
     },
 ];

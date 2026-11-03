@@ -1,33 +1,32 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { ServiceAuth } from '../service-auth';
 import { CustomValidators } from '../../lib/custom-validators';
-import { ErrorMessages } from '../../lib/error-messages';
+import { Logger } from '../../lib/logger';
 
 
 @Component({
     selector: 'app-register',
-    imports: [ AsyncPipe, ReactiveFormsModule ],
     templateUrl: './register.html',
-    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './register.css',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    imports: [ AsyncPipe, ReactiveFormsModule ],
 })
 export class Register
 {
     private readonly auth = inject(ServiceAuth);
     private readonly router = inject(Router);
 
+
     public form = new FormGroup({
         username: new FormControl('', [ Validators.required, Validators.minLength(3), CustomValidators.noChar(/\s/i) ]),
         password: new FormControl('', [ Validators.required, Validators.minLength(3), CustomValidators.noChar(/\s/i) ]),
-        repeatedPassword: new FormControl('', [ Validators.required ]),
+        passwordRepeat: new FormControl('', [ Validators.required ]),
     }, { validators: [ CustomValidators.matchPasswords ] });
 
-    public errlogs = new ErrorMessages();
-
+    public errlogs = new Logger();
 
     public onSubmit()
     {
@@ -37,25 +36,19 @@ export class Register
             return;
         }
 
-        this.auth.signIn(this.form.value.username!, this.form.value.password!).subscribe({
-            complete: () =>
+        this.auth
+            .signIn(this.form.value.username!, this.form.value.password!)
+            .subscribe((ok) =>
             {
-                //alert('Registration was successfull.');
-                this.errlogs.clear();
-                this.router.navigate([ '/chatsRoom' ]);
-            },
-            error: (err) =>
-            {
-                if (err instanceof HttpErrorResponse && err.statusText)
+                if (ok)
                 {
-                    this.errlogs.new(err.statusText);
+                    this.errlogs.clear();
+                    this.router.navigate([ '/' ]);
                 }
                 else
                 {
-                    console.debug(err);
-                    this.errlogs.new('Unknown error occured.');
+                    this.errlogs.new('Invalid credentials.');
                 }
-            },
-        });
+            });
     }
 }

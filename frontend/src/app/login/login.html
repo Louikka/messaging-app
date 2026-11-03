@@ -1,11 +1,9 @@
-<div class="background-pattern  w-full h-full flex">
-    <div class="grow"></div>
-
-    <div class="w-100 h-full p-4 bg-(--app-global-background-color)">
-        <form class="mt-4 flex flex-col" [formGroup]="form" (ngSubmit)="onSubmit()">
-            <div>
+<div class="w-full h-full flex justify-center items-center">
+    <div class="min-w-80 w-100 p-4 rounded-2xl bg-(--app-foreground-color) shadow-md">
+        <form class="w-full h-full flex flex-col gap-2" [formGroup]="form" (ngSubmit)="onSubmit()">
+            <div class="w-full">
                 <input
-                    class="app-input  w-full px-3 py-1 text-lg"
+                    class="w-full p-1"
                     type="text"
                     placeholder="Username"
                     autocomplete="username"
@@ -15,13 +13,14 @@
                 {
                     @if (form.controls.username.hasError('required'))
                     {
-                        <div class="ml-1 text-sm text-red-500">Username is required.</div>
+                        <span class="_form-error-message">Username is required.</span>
                     }
                 }
             </div>
-            <div>
+
+            <div class="w-full">
                 <input
-                    class="app-input  w-full mt-1.5 px-3 py-1 text-lg"
+                    class="w-full p-1"
                     type="password"
                     placeholder="Password"
                     autocomplete="current-password"
@@ -31,22 +30,26 @@
                 {
                     @if (form.controls.password.hasError('required'))
                     {
-                        <div class="ml-1 text-sm text-red-500">Password is required.</div>
+                        <span class="_form-error-message">Password is required.</span>
                     }
                 }
             </div>
 
-            @if (errlogs.messages$ | async; as errorMessage)
+            @if (errlogs.logs$ | async; as errorMessage)
             {
-                <div class="mt-1 ml-1 text-sm text-red-500">{{ errorMessage }}</div>
+                <div class="w-full">
+                    <span class="_form-error-message">{{ errorMessage }}</span>
+                </div>
             }
 
-            <div>
-                <input class="app-button  mt-2 px-3 py-1 text-lg" type="submit" value="Log In" />
+            <div class="w-full mt-1">
+                <input class="app-button  px-4 py-1 text-lg" type="submit" value="Log In" />
             </div>
-            <div class="mt-1 ml-1 text-sm">
-                Don't have an account yet? <a href="/register" class="app-link">Sign in</a>
+
+            <div class="w-full ml-1 text-sm">
+                Don't have an account yet? <a class="_a" href="/register">Sign in</a>
             </div>
         </form>
     </div>
 </div>
+

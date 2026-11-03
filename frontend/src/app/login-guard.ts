@@ -1,25 +1,26 @@
 import { inject } from '@angular/core';
-import { CanMatchFn } from '@angular/router';
+import { CanActivateFn, RedirectCommand, Router } from '@angular/router';
+import { map } from 'rxjs';
 
 import { ServiceAuth } from './service-auth';
 
 
-export const isLoggedIn: CanMatchFn = () =>
+export const loginGuard: CanActivateFn = (route, state) =>
 {
+    const router = inject(Router);
     const auth = inject(ServiceAuth);
-    return auth.isLoggedIn();
+
+    return auth.isLoggedIn().pipe(
+        map((ok) =>
+        {
+            if (ok)
+            {
+                return true;
+            }
+            else
+            {
+                return new RedirectCommand(router.parseUrl('/login'));
+            }
+        }),
+    );
 };
-
-// export const loginGuard: CanActivateFn = (route, state) =>
-// {
-//     const router = inject(Router);
-//     const auth = inject(ServiceAuth);
-
-//     if (auth.isLoggedIn())
-//     {
-//         return true;
-//     }
-
-//     console.debug(`Cannot navigate to the ${state.url}: access denied. Redirecting to the /login...`);
-//     return new RedirectCommand(router.parseUrl('/login'));
-// };

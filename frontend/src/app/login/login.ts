@@ -1,31 +1,30 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { ServiceAuth } from '../service-auth';
-import { ErrorMessages } from '../../lib/error-messages';
+import { Logger } from '../../lib/logger';
 
 
 @Component({
     selector: 'app-login',
-    imports: [ AsyncPipe, ReactiveFormsModule ],
     templateUrl: './login.html',
-    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './login.css',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    imports: [ AsyncPipe, ReactiveFormsModule ],
 })
 export class Login
 {
-    private readonly auth = inject(ServiceAuth);
     private readonly router = inject(Router);
+    private readonly auth = inject(ServiceAuth);
+
 
     public form = new FormGroup({
         username: new FormControl('', [ Validators.required ]),
         password: new FormControl('', [ Validators.required ]),
     });
 
-    public errlogs = new ErrorMessages();
-
+    public errlogs = new Logger();
 
     public onSubmit()
     {
@@ -35,17 +34,19 @@ export class Login
             return;
         }
 
-        this.auth.logIn(this.form.value.username!, this.form.value.password!).subscribe({
-            complete: () =>
+        this.auth
+            .logIn(this.form.value.username!, this.form.value.password!)
+            .subscribe((ok) =>
             {
-                this.errlogs.clear();
-                this.router.navigate([ '/chatsRoom' ]);
-            },
-            error: (err) =>
-            {
-                console.debug(err);
-                this.errlogs.new('Unknown error occured.');
-            },
-        });
+                if (ok)
+                {
+                    this.errlogs.clear();
+                    this.router.navigate([ '/' ]);
+                }
+                else
+                {
+                    this.errlogs.new('Invalid credentials.');
+                }
+            });
     }
 }
