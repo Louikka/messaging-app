@@ -5,7 +5,6 @@
 
 
 ## Long-term
-- connect server and frontend
 - change Redis to ???
 
 

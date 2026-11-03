@@ -1,4 +1,5 @@
 import http from 'http';
+import path from 'path';
 import { WebSocketServer } from 'ws';
 import express from 'express';
 import type { Request } from 'express';
@@ -15,6 +16,9 @@ const SERVER_PORT = +(process.env['SERVER_PORT'] ?? 3000);
 const WSS_PORT = +(process.env['WSS_PORT'] ?? 8080);
 
 const JWT_PRIVATE_KEY = process.env['JWT_PRIVATE_KEY'] ?? 'shhhhh';
+
+// directory where angular dumps built bundle (`ng build`)
+const STATIC_DIR = path.resolve('./frontend/dist/frontend/browser');
 
 
 const JWTMiddleware = expressjwt({ secret: JWT_PRIVATE_KEY, algorithms: [ 'HS256' ] });
@@ -61,6 +65,8 @@ const app = express();
 
 app.use(express.json());
 app.use('/api', JWTMiddleware.unless({ path: [ '/api/register', '/api/login' ] }));
+
+app.use('/', express.static(STATIC_DIR));
 
 
 
