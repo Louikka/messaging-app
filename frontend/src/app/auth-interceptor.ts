@@ -1,9 +1,13 @@
 import { HttpInterceptorFn } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { ServiceAuth } from './service-auth';
 
 
 export const authInterceptor: HttpInterceptorFn = (req, next) =>
 {
-    const token = sessionStorage.getItem('jwttoken');
+    const auth = inject(ServiceAuth);
+
+    const token = auth.getToken();
     if (token !== null)
     {
         req = req.clone({
