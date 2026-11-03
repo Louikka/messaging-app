@@ -6,10 +6,10 @@ import { AsyncPipe } from '@angular/common';
 
 @Component({
     selector: 'app-chats-room',
-    imports: [ RouterOutlet, AsyncPipe ],
     templateUrl: './chats-room.html',
-    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './chats-room.css',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    imports: [ RouterOutlet, AsyncPipe ],
 })
 export class ChatsRoom
 {
@@ -20,21 +20,22 @@ export class ChatsRoom
 
 
     private readonly router = inject(Router);
+
     public readonly chats = inject(ServiceChats);
 
 
     public navigateToCreateChat()
     {
-        this.router.navigate([ '/chatsRoom/create' ]);
+        this.router.navigate([ '/create' ]);
     }
 
     public navigateToJoinChat()
     {
-        this.router.navigate([ '/chatsRoom/join' ]);
+        this.router.navigate([ '/join' ]);
     }
 
     public navigateToChat(chatId: string)
     {
-        this.router.navigate([ `/chatsRoom/${chatId}` ]);
+        this.router.navigate([ `/c/${chatId}` ]);
     }
 }

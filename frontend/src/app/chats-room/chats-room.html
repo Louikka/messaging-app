@@ -1,21 +1,29 @@
 <div class="w-full h-full p-4 flex gap-4 bg-(--app-bg-color)">
-    <aside class="max-w-70 w-1/5">
-        <div class="app-area  w-full h-full p-2 flex flex-col">
-            <!-- chat controls buttons -->
-            <div class="mt-4 flex flex-col gap-2">
-                <input class="app-button  px-3 py-1 text-lg" type="button" value="Create new chat" (click)="navigateToCreateChat()" />
-                <input class="app-button  px-3 py-1 text-lg" type="button" value="Join chat" (click)="navigateToJoinChat()" />
-            </div>
+    <aside class="max-w-70 w-1/5 p-4 flex flex-col rounded-2xl bg-(--app-foreground-color) shadow-md">
+        <!-- chat controls buttons -->
+        <div class="mt-4 flex flex-col gap-2 text-lg text-(--app-button-text-color)">
+            <input
+                class="py-1 bg-(--app-button-background-color) rounded-full hover:bg-(--app-button-background-color-hover)"
+                type="button"
+                value="Create new chat"
+                (click)="navigateToCreateChat()"
+            />
+            <input
+                class="py-1 bg-(--app-button-background-color) rounded-full hover:bg-(--app-button-background-color-hover)"
+                type="button"
+                value="Join chat"
+                (click)="navigateToJoinChat()"
+            />
+        </div>
 
-            <!-- chats list -->
-            <div class="mt-4 flex flex-col gap-2">
-                @for (chat of chats.chats$ | async; track chat)
-                {
-                    <button class="px-3 rounded-xl hover:bg-neutral-950/8" (click)="navigateToChat(chat.id)">
-                        Chat "{{ chat.name }}"
-                    </button>
-                }
-            </div>
+        <!-- chats list -->
+        <div class="mt-4 flex flex-col gap-2">
+            @for (chat of chats.chats$ | async; track chat)
+            {
+                <button class="px-3 rounded-xl hover:bg-neutral-950/8" (click)="navigateToChat(chat.id)">
+                    Chat "{{ chat.name }}"
+                </button>
+            }
         </div>
     </aside>
 
