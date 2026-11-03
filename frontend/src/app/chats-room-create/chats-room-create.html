@@ -21,7 +21,7 @@
                     <div class="ml-1 text-sm text-red-500">Chat name contains disallowed characters.</div>
                 }
             }
-            @if (errlogs.messages$ | async; as errorMessage)
+            @if (errlogs.logs$ | async; as errorMessage)
             {
                 <div class="mt-1 text-sm text-red-500">{{ errorMessage }}</div>
             }

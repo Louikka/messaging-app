@@ -135,8 +135,7 @@ app.get('/api/user', async (req: JWTRequest, res) =>
 
     res.json({
         username: user.username,
-        active_chats: user.active_chats,
-        own_chats: user.own_chats,
+        chats: user.chats,
     });
 });
 
@@ -164,41 +163,6 @@ app.post('/api/chat/create', async (req: JWTRequest, res) =>
         id: chatID,
         name: chat_name,
         owner,
-    });
-});
-
-
-app.get('/api/chat/id/:chat_id', async (req: JWTRequest, res) =>
-{
-    const username = req.auth?.['username'];
-    if (!isNonEmptyString(username))
-    {
-        res.sendStatus(400);
-        return;
-    }
-
-    const chatId = req.params['chat_id'];
-    if (!isNonEmptyString(chatId))
-    {
-        res.sendStatus(400);
-        return;
-    }
-
-    if (!await db.isUserInChat(username, chatId))
-    {
-        res.status(403).send({ error: 'Access denied.' });
-        return;
-    }
-
-    const chat = await db.getChat(chatId);
-    if (chat === null)
-    {
-        res.status(404).send({ error: `Chat with ID "${chatId}" was not found.` });
-        return;
-    }
-
-    res.json({
-        ...chat,
     });
 });
 

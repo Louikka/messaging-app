@@ -26,7 +26,7 @@ export class ChatsRoomJoin
     public readonly errlogs = new ErrorMessages();
 
 
-    public onSubmit()
+    public onSubmit() // todo
     {
         if (this.form.controls.chatID.invalid)
         {
@@ -41,22 +41,22 @@ export class ChatsRoomJoin
             return;
         }
 
-        this.chats.getChat(chatID).subscribe({
-            next: (v) =>
-            {
-                console.debug('Redirecting to the chat room...');
-                this.router.navigate([ 'chatsRoom', v.id ]);
+        // this.chats.getChat(chatID).subscribe({
+        //     next: (v) =>
+        //     {
+        //         console.debug('Redirecting to the chat room...');
+        //         this.router.navigate([ 'chatsRoom', v.id ]);
 
-                this.chats.updateChats();
-            },
-            error: (err) =>
-            {
-                console.error(err);
-                if (err instanceof HttpErrorResponse)
-                {
-                    this.errlogs.new(err.error.error);
-                }
-            },
-        });
+        //         this.chats.updateChats();
+        //     },
+        //     error: (err) =>
+        //     {
+        //         console.error(err);
+        //         if (err instanceof HttpErrorResponse)
+        //         {
+        //             this.errlogs.new(err.error.error);
+        //         }
+        //     },
+        // });
     }
 }

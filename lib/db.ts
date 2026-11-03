@@ -10,7 +10,7 @@ export interface DBUser {
     salt: string;
     /** ID's of chats. */
     active_chats: Array<string>;
-    /** ID's of chats. */
+    /** ID's of user's own chats. */
     own_chats: Array<string>;
 }
 
@@ -30,8 +30,7 @@ export interface DBChatMessage {
 
 export interface APIUser {
     username: string;
-    active_chats: Array<DBChat>;
-    own_chats: Array<Omit<DBChat, 'owner'>>;
+    chats: Array<DBChat>;
 }
 
 
@@ -134,7 +133,7 @@ export class RedisClient
             return null;
         }
 
-        const activeChats: APIUser['active_chats'] = [];
+        const chats: APIUser['chats'] = [];
         for (const chatId of dbUser.active_chats)
         {
             const chat = await this.getChat(chatId)
@@ -143,28 +142,12 @@ export class RedisClient
                 continue;
             }
 
-            activeChats.push(chat);
-        }
-
-        const ownChats: APIUser['own_chats'] = [];
-        for (const chatId of dbUser.own_chats)
-        {
-            const chat = await this.getChat(chatId)
-            if (chat === null)
-            {
-                continue;
-            }
-
-            ownChats.push({
-                id: chat.id,
-                name: chat.name,
-            });
+            chats.push(chat);
         }
 
         return {
             username: dbUser.username,
-            active_chats: activeChats,
-            own_chats: ownChats,
+            chats: chats,
         };
     }
 

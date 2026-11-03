@@ -1,14 +1,7 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { BehaviorSubject, catchError, Observable, of, tap } from 'rxjs';
 import { ServiceAuth } from './service-auth';
-
-
-interface Chat {
-    id: string;
-    name: string;
-    owner: string | null;
-}
 
 
 @Injectable({
@@ -17,50 +10,48 @@ interface Chat {
 export class ServiceChats
 {
     private readonly http = inject(HttpClient);
-    private readonly auth = inject(ServiceAuth)
-
-    public chats$ = new BehaviorSubject<Chat[]>([]);
+    private readonly auth = inject(ServiceAuth);
 
 
-    // public isUserInChat(chatID: string): Observable<boolean>
-    // {
-    //     return this.http.get<GETChatCreateResponse>(`/api/chat/id/${chatID}`).pipe(
-    //         map((v) => true),
-    //         catchError((err) => of(false)),
-    //     );
-    // }
+    public chats$ = new BehaviorSubject<APIUserChat[]>([]);
 
-    public addNewChat(name: string)
+    public getChatSignature(chatId: string): APIUserChat | null
     {
-        return this.http.post<{
-            id: string;
-            name: string;
-            owner: string;
-        }>('/api/chat/create', {
-            chat_name: name,
-        }, {
-            headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
-        });
+        return this.chats$.value.find(c => c.id === chatId) ?? null;
     }
 
-    public getChat(chatID: string)
-    {
-        return this.http.get<{
-            id: string;
-            name: string;
-            owner: string;
-        }>(`/api/chat/id/${chatID}`);
-    }
-
-    /** Updates {@link chats$}. */
     public updateChats()
     {
-        this.auth.getUser().subscribe((user) =>
+        // do not forget to force refetch user
+        this.auth.getUser(true).subscribe((user) =>
         {
-            if (user === null) throw new Error('user is null');
+            if (user === null)
+            {
+                console.warn('Cannot update user chats: cannot get user.');
+                return;
+            }
 
-            // todo: merge active and own chats
             this.chats$.next(user.active_chats);
         });
+    }
+
+    /**
+     * @note updates chats automatically.
+     */
+    public addNewChat(name: string): Observable<APIUserChat | null>
+    {
+        const url = '/api/chat/create';
+        const body = { chat_name: name };
+
+        return this.http.post<APIUserChat>(url, body, {
+            headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
+        }).pipe(
+            tap(() => this.updateChats()),
+            catchError((err) =>
+            {
+                console.error('Error while trying to add new chat:', err);
+                return of(null);
+            }),
+        );
     }
 }

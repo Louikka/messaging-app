@@ -4,16 +4,16 @@ interface UserCredentials {
 }
 
 
+interface APIUserChat {
+    /** ID of the chat. */
+    id: string;
+    /** Chat's name. */
+    name: string;
+    /** Owner's name. */
+    owner: string;
+}
+
 interface APIUser {
     username: string;
-    active_chats: Array<{
-        id: string;
-        name: string;
-        /** User's name. */
-        owner: string;
-    }>;
-    own_chats: Array<{
-        id: string;
-        name: string;
-    }>;
+    active_chats: Array<APIUserChat>;
 }
