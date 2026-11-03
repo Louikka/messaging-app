@@ -8,6 +8,7 @@ export const chatsResolver: ResolveFn<Observable<any | RedirectCommand>> = (rout
 {
     const router = inject(Router);
     const auth = inject(ServiceAuth);
+
     const chatId = route.paramMap.get('chatId')!;
 
     return auth.getUser().pipe(
