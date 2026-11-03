@@ -1,8 +1,10 @@
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CustomValidators } from '../../lib/custom-validators';
 import { ServiceAuth } from '../service-auth';
+import { Logger } from '../../lib/logger';
 
 
 type FormType = 'login' | 'register';
@@ -12,7 +14,7 @@ type FormType = 'login' | 'register';
     templateUrl: './home.html',
     styleUrl: './home.css',
     changeDetection: ChangeDetectionStrategy.Eager,
-    imports: [ ReactiveFormsModule ],
+    imports: [ ReactiveFormsModule, AsyncPipe ],
 })
 export class Home
 {
@@ -38,34 +40,53 @@ export class Home
 
     public switchFormType(type: FormType)
     {
-        if (type !== this.formType) this.formType = type;
+        if (type !== this.formType)
+        {
+            this.formType = type;
+            this.errlogs.clear();
+        }
     }
+
+
+    public errlogs = new Logger();
+
+    private _onSubmitResponse(success: boolean)
+    {
+        if (success)
+        {
+            this.errlogs.clear();
+            this.router.navigate([ '/' ]);
+        }
+        else
+        {
+            this.errlogs.new('Invalid credentials.');
+        }
+    }
+
 
     public onLoginSubmit()
     {
-        this.auth.logIn(this.formLogin.value.username!, this.formLogin.value.password!).subscribe({
-            complete: () =>
-            {
-                this.router.navigate([ '/' ]);
-            },
-            error: (err) =>
-            {
-                console.debug(err);
-            },
-        });
+        if (this.formLogin.controls.username.invalid || this.formLogin.controls.password.invalid)
+        {
+            this.errlogs.new('Please, provide valid username and password.');
+            return;
+        }
+
+        this.auth
+            .logIn(this.formLogin.value.username!, this.formLogin.value.password!)
+            .subscribe((ok) => this._onSubmitResponse(ok));
     }
 
     public onRegisterSubmit()
     {
-        this.auth.signIn(this.formRegister.value.username!, this.formRegister.value.password!).subscribe({
-            complete: () =>
-            {
-                this.router.navigate([ '/' ]);
-            },
-            error: (err) =>
-            {
-                console.debug(err);
-            },
-        });
+        if (this.formRegister.controls.username.invalid || this.formRegister.controls.password.invalid)
+        {
+            this.errlogs.new('Please, provide valid username and password.');
+            return;
+        }
+
+        this.auth
+            .signIn(this.formRegister.value.username!, this.formRegister.value.password!)
+            .subscribe((ok) => this._onSubmitResponse(ok));
     }
 }

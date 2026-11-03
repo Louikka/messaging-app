@@ -1,4 +1,4 @@
-.form-input-error-message {
+._form-input-error-message {
     margin-left: calc(var(--spacing) * 1) /* 0.25rem = 4px */;
 
     display: block;
@@ -6,4 +6,28 @@
     font-size: var(--text-sm) /* 0.875rem = 14px */;
     line-height: var(--tw-leading, var(--text-sm--line-height) /* calc(1.25 / 0.875) ≈ 1.428571 */);
     color: var(--color-red-500) /* oklch(63.7% 0.237 25.331) = #fb2c36 */;
+}
+
+._submit {
+    padding-inline: calc(var(--spacing) * 4) /* 1rem = 16px */;
+    padding-block: calc(var(--spacing) * 1) /* 0.25rem = 4px */;
+
+    background-color: var(--app-button-background-color);
+    border-radius: calc(infinity * 1px);
+
+    font-size: var(--text-lg) /* 1.125rem = 18px */;
+    line-height: var(--tw-leading, var(--text-lg--line-height) /* calc(1.75 / 1.125) ≈ 1.555556 */);
+    color: var(--app-button-text-color);
+
+    &:hover {
+        background-color: var(--app-button-background-color-hover);
+    }
+}
+
+._switch-form {
+    text-decoration: underline solid currentColor 1px;
+
+    &:not(:hover) {
+        color: var(--color-olive-700);
+    }
 }

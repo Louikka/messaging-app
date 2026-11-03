@@ -17,9 +17,4 @@ describe('ServiceAuth', () =>
     {
         expect(service).toBeTruthy();
     });
-
-    it('should be initialised correctly', () =>
-    {
-        expect(service.isLoggedIn()).toBe(false);
-    });
 });

@@ -1,5 +1,5 @@
-<div class="w-full h-full flex justify-center items-center bg-(--app-bg)">
-    <div class="min-w-80 p-4 rounded-2xl bg-olive-300 shadow-md">
+<div class="w-full h-full flex justify-center items-center bg-(--app-background-color)">
+    <div class="min-w-80 w-100 p-4 rounded-2xl bg-(--app-foreground-color) shadow-md">
         @if (formType === 'login')
         {
             <form class="w-full h-full flex flex-col gap-2" [formGroup]="formLogin" (ngSubmit)="onLoginSubmit()">
@@ -15,7 +15,7 @@
                     {
                         @if (formLogin.controls.username.hasError('required'))
                         {
-                            <span class="form-input-error-message">Username is required.</span>
+                            <span class="_form-input-error-message">Username is required.</span>
                         }
                     }
                 </div>
@@ -32,17 +32,30 @@
                     {
                         @if (formLogin.controls.password.hasError('required'))
                         {
-                            <span class="form-input-error-message">Password is required.</span>
+                            <span class="_form-input-error-message">Password is required.</span>
                         }
                     }
                 </div>
 
+                @if (errlogs.logs$ | async; as errorMessage)
+                {
+                    <div class="w-full">
+                        <span class="_form-input-error-message">{{ errorMessage }}</span>
+                    </div>
+                }
+
                 <div class="w-full mt-1">
-                    <input class="app-button  px-4 py-1 text-lg" type="submit" value="Log In" />
+                    <input class="_submit" type="submit" value="Log In" />
                 </div>
 
                 <div class="w-full ml-1 text-sm">
-                    Don't have an account yet? <input type="button" value="Sign in" (click)="switchFormType('register')" />
+                    Don't have an account yet?
+                    <input
+                        class="_switch-form"
+                        type="button"
+                        value="Sign in"
+                        (click)="switchFormType('register')"
+                    />
                 </div>
             </form>
         }
@@ -61,15 +74,15 @@
                     {
                         @if (formRegister.controls.username.hasError('required'))
                         {
-                            <span class="form-input-error-message">Username is required.</span>
+                            <span class="_form-input-error-message">Username is required.</span>
                         }
                         @if (formRegister.controls.username.hasError('minlength'))
                         {
-                            <span class="form-input-error-message">Username must be at least 3 characters long.</span>
+                            <span class="_form-input-error-message">Username must be at least 3 characters long.</span>
                         }
                         @if (formRegister.controls.username.hasError('disallowedCharacters'))
                         {
-                            <span class="form-input-error-message">Username contains disallowed characters.</span>
+                            <span class="_form-input-error-message">Username contains disallowed characters.</span>
                         }
                     }
                 </div>
@@ -86,15 +99,15 @@
                     {
                         @if (formRegister.controls.password.hasError('required'))
                         {
-                            <span class="form-input-error-message">Password is required.</span>
+                            <span class="_form-input-error-message">Password is required.</span>
                         }
                         @if (formRegister.controls.password.hasError('minlength'))
                         {
-                            <span class="form-input-error-message">Password must be at least 3 characters long.</span>
+                            <span class="_form-input-error-message">Password must be at least 3 characters long.</span>
                         }
                         @if (formRegister.controls.password.hasError('disallowedCharacters'))
                         {
-                            <span class="form-input-error-message">Password contains disallowed characters.</span>
+                            <span class="_form-input-error-message">Password contains disallowed characters.</span>
                         }
                     }
                 </div>
@@ -110,21 +123,34 @@
                     {
                         @if (formRegister.controls.passwordRepeat.hasError('required'))
                         {
-                            <span class="form-input-error-message">Password is required.</span>
+                            <span class="_form-input-error-message">Password is required.</span>
                         }
                     }
                     @if (formRegister.invalid && formRegister.hasError('mismatchedPasswords'))
                     {
-                        <span class="form-input-error-message">Passwords are not matching.</span>
+                        <span class="_form-input-error-message">Passwords are not matching.</span>
                     }
                 </div>
 
+                @if (errlogs.logs$ | async; as errorMessage)
+                {
+                    <div class="w-full">
+                        <span class="_form-input-error-message">{{ errorMessage }}</span>
+                    </div>
+                }
+
                 <div class="w-full mt-1">
-                    <input class="app-button  px-4 py-1 text-lg" type="submit" value="Sign In" />
+                    <input class="_submit" type="submit" value="Sign In" />
                 </div>
 
                 <div class="w-full ml-1 text-sm">
-                    Already have an account? <input type="button" value="Log in" (click)="switchFormType('login')" />
+                    Already have an account?
+                    <input
+                        class="_switch-form"
+                        type="button"
+                        value="Log in"
+                        (click)="switchFormType('login')"
+                    />
                 </div>
             </form>
         }
