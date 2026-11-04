@@ -2,24 +2,26 @@ import http from 'http';
 import path from 'path';
 import { WebSocketServer } from 'ws';
 import express from 'express';
-import type { Request } from 'express';
 import jwt from 'jsonwebtoken';
 import { expressjwt, type Request as JWTRequest } from 'express-jwt';
 
 import { RedisClient, type DBChatMessage } from './lib/db.ts';
-import { isNonEmptyString, validatePassword, verifyUserRegisterCredentials } from './lib/lib.ts';
+import {
+    getEnvKey,
+    isNonEmptyString,
+    validatePassword,
+    verifyUserRegisterCredentials
+} from './lib/lib.ts';
 
 
 process.loadEnvFile('./.env');
 
-const SERVER_PORT = +(process.env['SERVER_PORT'] ?? 3000);
-const WSS_PORT = +(process.env['WSS_PORT'] ?? 8080);
-
-const JWT_PRIVATE_KEY = process.env['JWT_PRIVATE_KEY'] ?? 'shhhhh';
+const SERVER_PORT = getEnvKey('SERVER_PORT');
+const WSS_PORT = +getEnvKey('WSS_PORT');
+const JWT_PRIVATE_KEY = getEnvKey('JWT_PRIVATE_KEY');
 
 // directory where angular dumps built bundle (`ng build`)
 const STATIC_DIR = path.resolve('./frontend/dist/frontend/browser');
-
 
 const JWTMiddleware = expressjwt({ secret: JWT_PRIVATE_KEY, algorithms: [ 'HS256' ] });
 
@@ -76,9 +78,14 @@ app.get('/', (req, res) =>
 });
 
 
-app.post('/api/register', async (req: Request<{}, {}, UserCredentials>, res) =>
+app.post('/api/register', async (req, res) =>
 {
     const { username, password } = req.body;
+    if (!isNonEmptyString(username) || !isNonEmptyString(password))
+    {
+        res.status(400).send({ error: 'Cannot get user credentials.' });
+        return;
+    }
 
     if (!verifyUserRegisterCredentials(username, password))
     {
@@ -100,9 +107,14 @@ app.post('/api/register', async (req: Request<{}, {}, UserCredentials>, res) =>
 });
 
 
-app.post('/api/login', async (req: Request<{}, {}, UserCredentials>, res) =>
+app.post('/api/login', async (req, res) =>
 {
     const { username, password } = req.body;
+    if (!isNonEmptyString(username) || !isNonEmptyString(password))
+    {
+        res.status(400).send({ error: 'Cannot get user credentials.' });
+        return;
+    }
 
     const user = await db.getUser(username);
     if (user === null || !validatePassword(password, user.password, user.salt))
@@ -150,7 +162,11 @@ app.post('/api/chat/create', async (req: JWTRequest, res) =>
     }
 
     const { chat_name } = req.body;
-    // todo: check if chat_name is exist and is string
+    if (!isNonEmptyString(chat_name))
+    {
+        res.status(400).send({ error: 'Cannot get `chat_name`.' });
+        return;
+    }
 
     const chatID = await db.addNewChat(chat_name, owner);
     if (chatID === null)

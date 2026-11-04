@@ -50,10 +50,44 @@ export function verifyUserRegisterCredentials(username: string, password: string
 }
 
 
-export function isNonEmptyString(s: any): s is string
+/**
+ * Checks if value is non-empty string.
+ */
+export function isNonEmptyString(v: any): v is string
 {
     return (
-        typeof s === 'string'
-        && s.length > 0
+        typeof v === 'string'
+        && v.length > 0
     );
+}
+
+
+export function throwError(err: Error | string): never
+{
+    if (typeof err === 'string')
+    {
+        throw new Error(err);
+    }
+    else
+    {
+        throw err;
+    }
+}
+
+export function getEnvKey(key: string, fallback?: string): string
+{
+    const v = process.env[key];
+    if (v === undefined)
+    {
+        if (fallback === undefined)
+        {
+            throw new Error(`Cannot get enviroment key "${key}".`);
+        }
+        else
+        {
+            return fallback;
+        }
+    }
+
+    return v;
 }
