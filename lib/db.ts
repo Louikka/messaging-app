@@ -1,8 +1,9 @@
-import crypto from 'crypto';
-import redis from 'redis';
-import { createHashFromString, hashPassword } from './lib.js';
+import * as redis from 'redis';
+
+import { hash, hashS, uuid } from './crypto.ts';
 
 
+// USER:<hash>
 export interface DBUser {
     username: string;
     /** Encoded. */
@@ -14,6 +15,7 @@ export interface DBUser {
     own_chats: Array<string>;
 }
 
+// CHAT:<hash>
 export interface DBChat {
     id: string;
     name: string;
@@ -21,6 +23,7 @@ export interface DBChat {
     owner: string;
 }
 
+// CHAT:<hash>:MESSAGES
 export interface DBChatMessage {
     username: string;
     text: string;
@@ -41,7 +44,7 @@ export interface APIUser {
  */
 function constructDBKey(name: string, val: string): string
 {
-    return name.toUpperCase() + ':' + createHashFromString(val);
+    return name.toUpperCase() + ':' + hash(val);
 }
 
 
@@ -74,7 +77,7 @@ export class RedisClient
     public async addNewUser(username: string, password: string)
     {
         const userDBKey = constructDBKey('USER', username);
-        const hashedPassword = hashPassword(password);
+        const hashedPassword = hashS(password);
 
         await this.client.hSet(userDBKey, 'username', username);
         await this.client.hSet(userDBKey, 'password', hashedPassword.hash);
@@ -192,7 +195,7 @@ export class RedisClient
             return null;
         }
 
-        const chatId = crypto.randomUUID();
+        const chatId = uuid();
         const chatDBKey = constructDBKey('CHAT', chatId);
 
         await this.client.hSet(chatDBKey, 'id', chatId);

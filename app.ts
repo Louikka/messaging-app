@@ -6,10 +6,10 @@ import jwt from 'jsonwebtoken';
 import { expressjwt, type Request as JWTRequest } from 'express-jwt';
 
 import { RedisClient, type DBChatMessage } from './lib/db.ts';
+import { validateSaltedHash } from './lib/crypto.ts';
 import {
     getEnvKey,
     isNonEmptyString,
-    validatePassword,
     verifyUserRegisterCredentials
 } from './lib/lib.ts';
 
@@ -106,7 +106,6 @@ app.post('/api/register', async (req, res) =>
     });
 });
 
-
 app.post('/api/login', async (req, res) =>
 {
     const { username, password } = req.body;
@@ -117,7 +116,7 @@ app.post('/api/login', async (req, res) =>
     }
 
     const user = await db.getUser(username);
-    if (user === null || !validatePassword(password, user.password, user.salt))
+    if (user === null || !validateSaltedHash(password, user.password, user.salt))
     {
         res.status(401).send({ error: 'User does not exists or credentials are wrong.' });
         return;
@@ -181,6 +180,26 @@ app.post('/api/chat/create', async (req: JWTRequest, res) =>
         owner,
     });
 });
+
+// TODO
+// app.post('/api/chat/join', async (req: JWTRequest, res) =>
+// {
+//     const owner = req.auth?.['username'];
+//     if (!isNonEmptyString(owner))
+//     {
+//         res.sendStatus(400);
+//         return;
+//     }
+
+//     const { chat_id } = req.body;
+//     if (!isNonEmptyString(chat_id))
+//     {
+//         res.status(400).send({ error: 'Cannot get `chat_id`.' });
+//         return;
+//     }
+
+//     res.sendStatus(204); // can use PUT instead of POST mayhaps?
+// });
 
 
 app.get('/api/chat/id/:chat_id/messages', async (req: JWTRequest, res) =>
