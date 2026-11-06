@@ -22,7 +22,7 @@ export class ServiceChats
 
     public updateChats()
     {
-        // do not forget to force refetch user
+        // do not forget to force refresh user
         this.auth.getUser(true).subscribe((user) =>
         {
             if (user === null)
@@ -31,7 +31,7 @@ export class ServiceChats
                 return;
             }
 
-            this.chats$.next(user.active_chats);
+            this.chats$.next(user.chats);
         });
     }
 

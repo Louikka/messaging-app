@@ -15,5 +15,5 @@ interface APIUserChat {
 
 interface APIUser {
     username: string;
-    active_chats: Array<APIUserChat>;
+    chats: Array<APIUserChat>;
 }
