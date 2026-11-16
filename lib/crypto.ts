@@ -1,9 +1,18 @@
 import * as crypto from 'node:crypto';
 
 
-export function uuid(): string
+export function uuid(length = 8): string
 {
-    return crypto.randomUUID();
+    const src = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    let s = '';
+
+    for (let i = 0; i < length; i++)
+    {
+        s += src[Math.floor(Math.random() * src.length)];
+    }
+
+    return s;
 }
 
 
