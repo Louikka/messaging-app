@@ -9,6 +9,18 @@
                 formControlName="chatName"
             />
         </label>
+        @if (form.controls.chatName.invalid && (form.controls.chatName.dirty && form.controls.chatName.touched))
+        {
+            @if (form.controls.chatName.hasError('required'))
+            {
+                <div class="_form-error-message">Chat name is required.</div>
+            }
+            @else if (form.controls.chatName.hasError('empty'))
+            {
+                <div class="_form-error-message">Chat name must not be empty.</div>
+            }
+        }
+
         @if (errlogs.logs$ | async; as errorMessage)
         {
             <div class="_form-error-message">{{ errorMessage }}</div>

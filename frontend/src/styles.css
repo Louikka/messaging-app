@@ -48,10 +48,11 @@ body {
     font-variation-settings: "wdth" 100;
     color: var(--app-text-color);
 }
+
 body[data-theme="light"] {
-    --app-background-color: var(--color-neutral-200);
+    --app-background-color: var(--color-olive-300);
     --app-bg-color: var(--app-background-color);
-    --app-foreground-color: oklch(84% 0.011 106.6) /*var(--color-olive-300)*/;
+    --app-foreground-color: var(--color-neutral-200);
     --app-fg-color: var(--app-foreground-color);
 
     --app-button-background-color: var(--color-neutral-600);
@@ -93,6 +94,10 @@ body[data-theme="dark"] {
     min-height : 0;
 }
 
+
+.app-tile {
+    @apply bg-(--app-foreground-color) border-[2px] rounded-2xl border-current/20;
+}
 
 .app-button {
     background-color: var(--app-button-background-color);

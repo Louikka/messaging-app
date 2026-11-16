@@ -1,94 +1,5 @@
-<!-- <div class="background-pattern  w-full h-full flex">
-    <div class="grow"></div>
-
-    <div class="w-100 h-full p-4 bg-(--app-global-background-color)">
-        <form class="mt-4 flex flex-col" [formGroup]="form" (ngSubmit)="onSubmit()">
-            <div>
-                <input
-                    class="app  w-full px-3 py-1 text-lg"
-                    type="text"
-                    placeholder="Username"
-                    autocomplete="username"
-                    formControlName="username"
-                />
-                @if (form.controls.username.invalid && (form.controls.username.dirty || form.controls.username.touched))
-                {
-                    @if (form.controls.username.hasError('required'))
-                    {
-                        <div class="ml-1 text-sm text-red-500">Username is required.</div>
-                    }
-                    @if (form.controls.username.hasError('minlength'))
-                    {
-                        <div class="ml-1 text-sm text-red-500">Username must be at least 3 characters long.</div>
-                    }
-                    @if (form.controls.username.hasError('disallowedCharacters'))
-                    {
-                        <div class="ml-1 text-sm text-red-500">Username contains disallowed characters.</div>
-                    }
-                }
-            </div>
-            <div>
-                <input
-                    class="app  w-full mt-1.5 px-3 py-1 text-lg"
-                    type="password"
-                    placeholder="Password"
-                    autocomplete="current-password"
-                    formControlName="password"
-                />
-                @if (form.controls.password.invalid && (form.controls.password.dirty || form.controls.password.touched))
-                {
-                    @if (form.controls.password.hasError('required'))
-                    {
-                        <div class="ml-1 text-sm text-red-500">Password is required.</div>
-                    }
-                    @if (form.controls.password.hasError('minlength'))
-                    {
-                        <div class="ml-1 text-sm text-red-500">Password must be at least 3 characters long.</div>
-                    }
-                    @if (form.controls.password.hasError('disallowedCharacters'))
-                    {
-                        <div class="ml-1 text-sm text-red-500">Password contains disallowed characters.</div>
-                    }
-                }
-            </div>
-            <div>
-                <input
-                    class="app  w-full mt-1.5 px-3 py-1 text-lg"
-                    type="password"
-                    placeholder="Repeat password"
-                    autocomplete="current-password"
-                    formControlName="repeatedPassword"
-                />
-                @if (form.controls.repeatedPassword.invalid && (form.controls.repeatedPassword.dirty || form.controls.repeatedPassword.touched))
-                {
-                    @if (form.controls.repeatedPassword.hasError('required'))
-                    {
-                        <div class="ml-1 text-sm text-red-500">Password is required.</div>
-                    }
-                }
-                @if (form.invalid && form.hasError('mismatchedPasswords'))
-                {
-                    <div class="ml-1 text-sm text-red-500">Passwords are not matching.</div>
-                }
-            </div>
-
-            @if (errlogs.messages$ | async; as errorMessage)
-            {
-                <div class="mt-1 ml-1 text-sm text-red-500">{{ errorMessage }}</div>
-            }
-
-            <div>
-                <input class="app-button  mt-2 px-3 py-1 text-lg" type="submit" value="Sign In" />
-            </div>
-            <div class="mt-1 ml-1 text-sm">
-                Already have an account? <a href="/login" class="app-link">Log in</a>
-            </div>
-        </form>
-    </div>
-</div> -->
-
 <div class="w-full h-full flex justify-center items-center">
-    <div class="min-w-80 w-100 p-4 rounded-2xl bg-(--app-foreground-color) shadow-md">
+    <div class="app-tile  min-w-80 w-100 p-4">
         <form class="w-full h-full flex flex-col gap-2" [formGroup]="form" (ngSubmit)="onSubmit()">
             <div class="w-full">
                 <input
@@ -98,7 +9,7 @@
                     autocomplete="username"
                     formControlName="username"
                 />
-                @if (form.controls.username.invalid && (form.controls.username.dirty || form.controls.username.touched))
+                @if (form.controls.username.invalid && (form.controls.username.dirty && form.controls.username.touched))
                 {
                     @if (form.controls.username.hasError('required'))
                     {
@@ -123,7 +34,7 @@
                     autocomplete="new-password"
                     formControlName="password"
                 />
-                @if (form.controls.password.invalid && (form.controls.password.dirty || form.controls.password.touched))
+                @if (form.controls.password.invalid && (form.controls.password.dirty && form.controls.password.touched))
                 {
                     @if (form.controls.password.hasError('required'))
                     {
@@ -147,7 +58,7 @@
                     placeholder="Password"
                     formControlName="passwordRepeat"
                 />
-                @if (form.controls.passwordRepeat.invalid && (form.controls.passwordRepeat.dirty || form.controls.passwordRepeat.touched))
+                @if (form.controls.passwordRepeat.invalid && (form.controls.passwordRepeat.dirty && form.controls.passwordRepeat.touched))
                 {
                     @if (form.controls.passwordRepeat.hasError('required'))
                     {

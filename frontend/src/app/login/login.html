@@ -1,5 +1,5 @@
 <div class="w-full h-full flex justify-center items-center">
-    <div class="min-w-80 w-100 p-4 rounded-2xl bg-(--app-foreground-color) shadow-md">
+    <div class="app-tile  min-w-80 w-100 p-4">
         <form class="w-full h-full flex flex-col gap-2" [formGroup]="form" (ngSubmit)="onSubmit()">
             <div class="w-full">
                 <input
@@ -9,7 +9,7 @@
                     autocomplete="username"
                     formControlName="username"
                 />
-                @if (form.controls.username.invalid && (form.controls.username.dirty || form.controls.username.touched))
+                @if (form.controls.username.invalid && (form.controls.username.dirty && form.controls.username.touched))
                 {
                     @if (form.controls.username.hasError('required'))
                     {
@@ -26,7 +26,7 @@
                     autocomplete="current-password"
                     formControlName="password"
                 />
-                @if (form.controls.password.invalid && (form.controls.password.dirty || form.controls.password.touched))
+                @if (form.controls.password.invalid && (form.controls.password.dirty && form.controls.password.touched))
                 {
                     @if (form.controls.password.hasError('required'))
                     {

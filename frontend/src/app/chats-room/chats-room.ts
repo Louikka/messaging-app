@@ -4,6 +4,7 @@ import { ServiceChats } from '../service-chats';
 import { AsyncPipe } from '@angular/common';
 import { ServiceModal } from '../service-modal';
 import { ChatCreateForm } from '../chat-create-form/chat-create-form';
+import { ChatJoinForm } from '../chat-join-form/chat-join-form';
 
 
 @Component({
@@ -34,11 +35,11 @@ export class ChatsRoom
 
     public navigateToJoinChat()
     {
-        this.router.navigate([ '/join' ]);
+        this.modal.showModal(ChatJoinForm);
     }
 
     public navigateToChat(chatId: string)
     {
-        this.router.navigate([ `/c/${chatId}` ]);
+        this.router.navigate([ 'c', chatId ]);
     }
 }

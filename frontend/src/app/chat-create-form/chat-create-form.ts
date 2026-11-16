@@ -28,7 +28,7 @@ export class ChatCreateForm
     private readonly chats = inject(ServiceChats);
 
     public form = new FormGroup({
-        chatName: new FormControl('', [ Validators.required ]),
+        chatName: new FormControl('', [ Validators.required, CustomValidators.nonEmpty ]),
     });
 
     public errlogs = new Logger();

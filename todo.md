@@ -1,8 +1,8 @@
 # todo
 
 ## Short-term
+- implement ChatJoinForm.onSubmit()
 - fix chat joining (so can only join via friend link, etc..)
-- change create/join chat routes to modal forms (wip)
 
 
 ## Long-term

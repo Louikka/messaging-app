@@ -4,7 +4,7 @@
     @if (modal.component$ | async; as component)
     {
         <div class="absolute top-0 left-0 w-full h-full bg-neutral-950/10 backdrop-blur-[1px]"></div>
-        <div class="absolute top-1/2 left-1/2 -translate-1/2 p-4 rounded-2xl bg-(--app-foreground-color) shadow-md">
+        <div class="app-tile  absolute top-1/2 left-1/2 -translate-1/2 p-4">
             <ng-container *ngComponentOutlet="component" />
         </div>
     }

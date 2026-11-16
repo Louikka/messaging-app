@@ -1,0 +1,22 @@
+<form class="w-full h-full flex flex-col justify-center items-center gap-2" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <section>
+        <label>
+            Enter chat ID:
+            <input
+                class="app-input  px-2 py-1"
+                type="text"
+                placeholder="..."
+                formControlName="chatId"
+            />
+        </label>
+        @if (errlogs.logs$ | async; as errorMessage)
+        {
+            <div class="_form-error-message">{{ errorMessage }}</div>
+        }
+    </section>
+
+    <section class="flex justify-center gap-2">
+        <input class="app-button  px-3 py-1" type="button" value="Close" (click)="close()" />
+        <input class="app-button  px-3 py-1" type="submit" value="Join chat" />
+    </section>
+</form>

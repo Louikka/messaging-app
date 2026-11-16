@@ -21,8 +21,8 @@ export class Register
 
 
     public form = new FormGroup({
-        username: new FormControl('', [ Validators.required, Validators.minLength(3), CustomValidators.noChar(/\s/i) ]),
-        password: new FormControl('', [ Validators.required, Validators.minLength(3), CustomValidators.noChar(/\s/i) ]),
+        username: new FormControl('', [ Validators.required, Validators.minLength(3), CustomValidators.contains(/^[\w-]+$/) ]),
+        password: new FormControl('', [ Validators.required, Validators.minLength(3), CustomValidators.contains(/^[\w-]+$/) ]),
         passwordRepeat: new FormControl('', [ Validators.required ]),
     }, { validators: [ CustomValidators.matchPasswords ] });
 
