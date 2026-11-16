@@ -17,3 +17,10 @@ interface APIUser {
     username: string;
     chats: Array<APIUserChat>;
 }
+
+
+interface WebSocketMessage {
+    username: string;
+    message: string;
+    timestamp: number;
+}

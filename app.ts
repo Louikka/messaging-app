@@ -258,9 +258,9 @@ app.post('/api/chat/id/:chat_id/messages', async (req: JWTRequest, res) =>
 
     const userChatMessage = {
         username,
-        text: req.body.message,
+        message: req.body.message,
         timestamp: Date.now(),
-    } as DBChatMessage;
+    };
 
     // send messages through websocket
     for (const ws of wss.clients)

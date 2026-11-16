@@ -2,40 +2,49 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { BehaviorSubject, EMPTY } from 'rxjs';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
+import { ServiceAuth } from './service-auth';
 
 
-interface WSMessage {
-    username: string;
-    text: string;
-    timestamp: number;
-}
 
-interface ChatMessage extends WSMessage {
-    type : 'message';
+
+interface ChatMessage extends WebSocketMessage {
+    type: 'message';
 }
 interface ChatError {
-    type : 'error';
-    text: string;
+    type: 'error';
+    message: string;
     timestamp: number;
 }
 
-type ChatContent = ChatMessage | ChatError;
+type ChatEntry = ChatMessage | ChatError;
 
 
 @Injectable()
 export class ServiceMessages
 {
+    constructor()
+    {
+        debugger;
+
+        // https://angular.dev/guide/components/lifecycle
+        // https://angular.dev/guide/di
+        // https://angular.dev/guide/di/defining-dependency-providers
+    }
+
+
     private readonly http = inject(HttpClient);
 
-    private ws$: WebSocketSubject<WSMessage> | null = null;
+    private readonly auth = inject(ServiceAuth);
+
+    private ws$: WebSocketSubject<WebSocketMessage> | null = null;
     private chatId: string | null = null;
 
-    public readonly messages$ = new BehaviorSubject<ChatContent[]>([]);
+    public readonly messages$ = new BehaviorSubject<ChatEntry[]>([]);
 
 
     public connect(chatId: string)
     {
-        const token = sessionStorage.getItem('jwttoken');
+        const token = this.auth.getToken();
         if (token === null)
         {
             throw new Error('Cannot get JWT token from localStorage.');
@@ -65,7 +74,7 @@ export class ServiceMessages
                     ...existingMessages,
                     {
                         type: 'error',
-                        text: String(err),
+                        message: String(err),
                         timestamp: Date.now(),
                     },
                 ]);
@@ -91,7 +100,7 @@ export class ServiceMessages
         {
             this.http.get<{
                 username: string;
-                text: string;
+                message: string;
                 timestamp: number;
             }[]>(`/api/chat/id/${this.chatId}/messages`).subscribe((messages) =>
             {

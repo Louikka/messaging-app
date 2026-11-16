@@ -26,7 +26,7 @@ export interface DBChat {
 // CHAT:<hash>:MESSAGES
 export interface DBChatMessage {
     username: string;
-    text: string;
+    message: string;
     timestamp: number;
 }
 
@@ -68,6 +68,8 @@ export class RedisClient
         await this.client.connect();
     }
 
+
+    /// User
 
     public async isUserExists(username: string): Promise<boolean>
     {
@@ -176,6 +178,8 @@ export class RedisClient
         return user.active_chats.includes(chatID);
     }
 
+
+    /// Chats
 
     public async isChatExists(chatId: string): Promise<boolean>
     {

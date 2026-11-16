@@ -17,20 +17,14 @@ export class ChatsRoomChat
 {
     constructor()
     {
-        this.activatedRoute.params.subscribe({
-            next: (params) =>
-            {
-                this.messages.disconnect();
+        this.activatedRoute.params.subscribe((params) =>
+        {
+            this.messages.disconnect();
 
-                const chatId = params['chatId'];
-                if (typeof chatId === 'string' && chatId)
-                {
-                    this.messages.connect(chatId);
-                }
-            },
-            error: (err) =>
+            const chatId = params['chatId'];
+            if (typeof chatId === 'string' && chatId)
             {
-                console.error(err);
+                this.messages.connect(chatId);
             }
         });
     }
