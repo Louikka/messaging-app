@@ -6,10 +6,6 @@
 - fix messages service (and, possible, server)
 
 
-## Long-term
-- change Redis to ???
-
-
 ## Also (not important)
 - fix/add styles
 - implement custom input (emoji support)

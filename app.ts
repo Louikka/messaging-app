@@ -5,7 +5,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import { expressjwt, type Request as JWTRequest } from 'express-jwt';
 
-import { RedisClient } from './lib/db.ts';
+import { DBClient } from './lib/db.ts';
 import { validateSaltedHash } from './lib/crypto.ts';
 import {
     getEnvKey,
@@ -29,8 +29,7 @@ const JWTMiddleware = expressjwt({ secret: JWT_PRIVATE_KEY, algorithms: [ 'HS256
 
 /* Database ******************************************************************/
 
-const db = new RedisClient();
-await db.connect();
+const db = new DBClient();
 
 
 

@@ -1,9 +1,10 @@
-import * as redis from 'redis';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 
-import { hash, hashS, uuid } from './crypto.ts';
+import { hashS, uuid } from './crypto.ts';
 
 
-// USER:<hash>
 export interface DBUser {
     username: string;
     /** Encoded. */
@@ -15,7 +16,6 @@ export interface DBUser {
     own_chats: Array<string>;
 }
 
-// CHAT:<hash>
 export interface DBChat {
     id: string;
     name: string;
@@ -23,7 +23,6 @@ export interface DBChat {
     owner: string;
 }
 
-// CHAT:<hash>:MESSAGES
 export interface DBChatMessage {
     username: string;
     message: string;
@@ -37,91 +36,126 @@ export interface APIUser {
 }
 
 
-/**
- * @param name primal identifier for key (converts to upper case).
- * @param val value that will be hashed and concatenated to the key.
- * @returns string key of type `<name>:<hash>`; for example `ID:123`.
- */
-function constructDBKey(name: string, val: string): string
-{
-    return name.toUpperCase() + ':' + hash(val);
-}
+/** `SQLITE_CONSTRAINT_FOREIGNKEY` from SQLite's result codes. */
+const SQLITE_CONSTRAINT_FOREIGNKEY = 787;
+
+const SCHEMA = `
+    CREATE TABLE IF NOT EXISTS users (
+        username TEXT PRIMARY KEY,
+        password TEXT NOT NULL,
+        salt     TEXT NOT NULL
+    ) STRICT;
+
+    CREATE TABLE IF NOT EXISTS chats (
+        seq   INTEGER PRIMARY KEY AUTOINCREMENT,
+        id    TEXT NOT NULL UNIQUE,
+        name  TEXT NOT NULL,
+        owner TEXT NOT NULL REFERENCES users (username) ON UPDATE CASCADE
+    ) STRICT;
+
+    CREATE TABLE IF NOT EXISTS chat_members (
+        username TEXT NOT NULL REFERENCES users (username) ON UPDATE CASCADE ON DELETE CASCADE,
+        chat_id  TEXT NOT NULL REFERENCES chats (id) ON DELETE CASCADE,
+        is_owner INTEGER NOT NULL DEFAULT 0 CHECK (is_owner IN (0, 1)),
+        PRIMARY KEY (username, chat_id)
+    ) STRICT;
+
+    CREATE TABLE IF NOT EXISTS messages (
+        id        INTEGER PRIMARY KEY AUTOINCREMENT,
+        chat_id   TEXT NOT NULL REFERENCES chats (id) ON DELETE CASCADE,
+        username  TEXT NOT NULL,
+        message   TEXT NOT NULL,
+        timestamp INTEGER NOT NULL
+    ) STRICT;
+
+    CREATE INDEX IF NOT EXISTS idx_messages_chat_id ON messages (chat_id, id);
+    CREATE INDEX IF NOT EXISTS idx_chat_members_chat_id ON chat_members (chat_id);
+    CREATE INDEX IF NOT EXISTS idx_chats_owner ON chats (owner);
+`;
 
 
-export class RedisClient
+export class DBClient
 {
-    constructor()
+    /**
+     * @param dbPath Path to the SQLite database file. Defaults to the
+     * `DB_PATH` environment variable or `./data.db`.
+     */
+    constructor(dbPath = process.env['DB_PATH'] ?? './data.db')
     {
-        this.client = redis.createClient();
-
-        this.client.on('error', (err) =>
+        if (dbPath !== ':memory:')
         {
-            console.error('Redis client error: ', err);
-        });
+            fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+        }
+
+        this.db = new DatabaseSync(dbPath);
+
+        this.db.exec('PRAGMA journal_mode = WAL;');
+        this.db.exec('PRAGMA foreign_keys = ON;');
+        this.db.exec('PRAGMA busy_timeout = 5000;');
+        this.db.exec(SCHEMA);
     }
 
 
-    public readonly client;
-
-    public async connect()
-    {
-        await this.client.connect();
-    }
+    public readonly db: DatabaseSync;
 
 
     /// User
 
     public async isUserExists(username: string): Promise<boolean>
     {
-        return await this.client.exists(constructDBKey('USER', username)) > 0;
+        const row = this.db.prepare('SELECT 1 FROM users WHERE username = ?').get(username);
+        return row !== undefined;
     }
 
     public async addNewUser(username: string, password: string)
     {
-        const userDBKey = constructDBKey('USER', username);
         const hashedPassword = hashS(password);
 
-        await this.client.hSet(userDBKey, 'username', username);
-        await this.client.hSet(userDBKey, 'password', hashedPassword.hash);
-        await this.client.hSet(userDBKey, 'salt', hashedPassword.salt);
-        await this.client.hSet(userDBKey, 'active_chats', '[]');
-        await this.client.hSet(userDBKey, 'own_chats', '[]');
+        this.db.prepare(
+            'INSERT INTO users (username, password, salt) VALUES (?, ?, ?)'
+        ).run(username, hashedPassword.hash, hashedPassword.salt);
     }
 
     public async getUser(username: string): Promise<DBUser | null>
     {
-        if (!await this.isUserExists(username))
-        {
-            return null;
-        }
-
         try
         {
-            const user = {} as DBUser;
-            const dbUser = await this.client.hGetAll(constructDBKey('USER', username));
-            for (const [key, value] of Object.entries(dbUser))
-            {
-                switch (key)
-                {
-                    case 'active_chats':
-                    {
-                        user.active_chats = JSON.parse(value);
-                        break;
-                    }
-                    case 'own_chats':
-                    {
-                        user.own_chats = JSON.parse(value);
-                        break;
-                    }
+            const user = this.db.prepare(
+                'SELECT username, password, salt FROM users WHERE username = ?'
+            ).get(username) as { username: string; password: string; salt: string; } | undefined;
 
-                    default:
-                    {
-                        user[key as keyof Omit<DBUser, 'active_chats' | 'own_chats'>] = value;
-                    }
+            if (user === undefined)
+            {
+                return null;
+            }
+
+            const memberships = this.db.prepare(`
+                SELECT m.chat_id, m.is_owner
+                FROM chat_members AS m
+                JOIN chats AS c ON c.id = m.chat_id
+                WHERE m.username = ?
+                ORDER BY c.seq
+            `).all(username);
+
+            const active_chats: string[] = [];
+            const own_chats: string[] = [];
+            for (const membership of memberships)
+            {
+                const chatId = membership['chat_id'] as string;
+                active_chats.push(chatId);
+                if (membership['is_owner'] === 1)
+                {
+                    own_chats.push(chatId);
                 }
             }
 
-            return user;
+            return {
+                username: user.username,
+                password: user.password,
+                salt: user.salt,
+                active_chats,
+                own_chats,
+            };
         }
         catch (err)
         {
@@ -132,32 +166,31 @@ export class RedisClient
 
     public async getUserAPI(username: string): Promise<APIUser | null>
     {
-        const dbUser = await this.getUser(username);
-        if (dbUser === null)
+        if (!await this.isUserExists(username))
         {
             return null;
         }
 
-        const chats: APIUser['chats'] = [];
-        for (const chatId of dbUser.active_chats)
-        {
-            const chat = await this.getChat(chatId)
-            if (chat === null)
-            {
-                continue;
-            }
-
-            chats.push(chat);
-        }
+        const rows = this.db.prepare(`
+            SELECT c.id, c.name, c.owner
+            FROM chat_members AS m
+            JOIN chats AS c ON c.id = m.chat_id
+            WHERE m.username = ?
+            ORDER BY c.seq
+        `).all(username);
 
         return {
-            username: dbUser.username,
-            chats: chats,
+            username,
+            chats: rows.map((row) => ({
+                id: row['id'] as string,
+                name: row['name'] as string,
+                owner: row['owner'] as string,
+            })),
         };
     }
 
     /**
-     * @returns `-1` if an error occured, `0` if field already existed and get updated, `1` if new field was created.
+     * @returns `-1` if an error occured, `0` otherwise.
      */
     public async updateUser(username: string, field: keyof DBUser, value: any): Promise<number>
     {
@@ -167,15 +200,56 @@ export class RedisClient
             return -1;
         }
 
-        return await this.client.hSet(constructDBKey('USER', username), field, value);
+        try
+        {
+            this.transaction(() =>
+            {
+                switch (field)
+                {
+                    case 'username':
+                    {
+                        this.db.prepare('UPDATE users SET username = ? WHERE username = ?').run(String(value), username);
+                        break;
+                    }
+                    case 'password':
+                    {
+                        this.db.prepare('UPDATE users SET password = ? WHERE username = ?').run(String(value), username);
+                        break;
+                    }
+                    case 'salt':
+                    {
+                        this.db.prepare('UPDATE users SET salt = ? WHERE username = ?').run(String(value), username);
+                        break;
+                    }
+                    case 'active_chats':
+                    {
+                        this.setActiveChats(username, this.parseChatIds(value));
+                        break;
+                    }
+                    case 'own_chats':
+                    {
+                        this.setOwnChats(username, this.parseChatIds(value));
+                        break;
+                    }
+                }
+            });
+
+            return 0;
+        }
+        catch (err)
+        {
+            console.error(err);
+            return -1;
+        }
     }
 
     /** Checks if user has specified chat ID in `active_chats`. */
     public async isUserInChat(username: string, chatID: string): Promise<boolean>
     {
-        const user = await this.getUser(username);
-        if (user === null) return false;
-        return user.active_chats.includes(chatID);
+        const row = this.db.prepare(
+            'SELECT 1 FROM chat_members WHERE username = ? AND chat_id = ?'
+        ).get(username, chatID);
+        return row !== undefined;
     }
 
 
@@ -183,7 +257,8 @@ export class RedisClient
 
     public async isChatExists(chatId: string): Promise<boolean>
     {
-        return await this.client.exists(constructDBKey('CHAT', chatId)) > 0;
+        const row = this.db.prepare('SELECT 1 FROM chats WHERE id = ?').get(chatId);
+        return row !== undefined;
     }
 
     /**
@@ -192,27 +267,31 @@ export class RedisClient
      */
     public async addNewChat(name: string, owner: string): Promise<string | null>
     {
-        const user = await this.getUser(owner);
-        if (user === null)
+        if (!await this.isUserExists(owner))
         {
             console.warn(`User "${owner}" does not exists.`);
             return null;
         }
 
         const chatId = uuid();
-        const chatDBKey = constructDBKey('CHAT', chatId);
 
-        await this.client.hSet(chatDBKey, 'id', chatId);
-        await this.client.hSet(chatDBKey, 'name', name);
-        await this.client.hSet(chatDBKey, 'owner', owner);
-
-        user.own_chats.push(chatId);
-        user.active_chats.push(chatId);
-
-        let ok = true;
-        ok &&= await this.updateUser(owner, 'own_chats', JSON.stringify(user.own_chats)) >= 0;
-        ok &&= await this.updateUser(owner, 'active_chats', JSON.stringify(user.active_chats)) >= 0;
-        if (!ok) return null;
+        try
+        {
+            this.transaction(() =>
+            {
+                this.db.prepare(
+                    'INSERT INTO chats (id, name, owner) VALUES (?, ?, ?)'
+                ).run(chatId, name, owner);
+                this.db.prepare(
+                    'INSERT INTO chat_members (username, chat_id, is_owner) VALUES (?, ?, 1)'
+                ).run(owner, chatId);
+            });
+        }
+        catch (err)
+        {
+            console.error(err);
+            return null;
+        }
 
         console.debug('Successfully added new chat: ', chatId, name);
 
@@ -221,76 +300,140 @@ export class RedisClient
 
     public async getChat(chatId: string): Promise<DBChat | null>
     {
-        if (await this.isChatExists(chatId))
+        try
         {
-            try
-            {
-                const chat = {} as DBChat;
-                const dbChat = await this.client.hGetAll(constructDBKey('CHAT', chatId));
-                for (const [key, value] of Object.entries(dbChat))
-                {
-                    chat[key as keyof DBChat] = value;
-                }
+            const chat = this.db.prepare(
+                'SELECT id, name, owner FROM chats WHERE id = ?'
+            ).get(chatId) as { id: string; name: string; owner: string; } | undefined;
 
-                return chat;
-            }
-            catch (err)
+            if (chat === undefined)
             {
-                console.error(err);
+                console.debug(`Unable to get chat "${chatId}".`);
+                return null;
             }
+
+            return {
+                id: chat.id,
+                name: chat.name,
+                owner: chat.owner,
+            };
         }
-        else
+        catch (err)
         {
-            console.debug(`Unable to get chat "${chatId}".`);
+            console.error(err);
+            return null;
         }
-
-        return null;
     }
 
     public async addChatMessage(chatId: string, message: DBChatMessage)
     {
-        if (await this.isChatExists(chatId))
+        try
         {
-            try
+            this.db.prepare(
+                'INSERT INTO messages (chat_id, username, message, timestamp) VALUES (?, ?, ?, ?)'
+            ).run(chatId, message.username, message.message, message.timestamp);
+        }
+        catch (err)
+        {
+            if ((err as { errcode?: number; }).errcode === SQLITE_CONSTRAINT_FOREIGNKEY)
             {
-                await this.client.rPush(constructDBKey('CHAT', chatId) + ':MESSAGES', JSON.stringify(message));
+                console.debug(`Unable to add a message: chat "${chatId}" does not exist.`);
             }
-            catch (err)
+            else
             {
                 console.error(err);
             }
-        }
-        else
-        {
-            console.debug(`Unable to get chat "${chatId}".`);
         }
     }
 
     public async getChatMessages(chatId: string): Promise<DBChatMessage[] | null>
     {
-        if (await this.isChatExists(chatId))
-        {
-            try
-            {
-                const messages = [] as DBChatMessage[];
-                const dbChatMessages = await this.client.lRange(constructDBKey('CHAT', chatId) + ':MESSAGES', 0, -1);
-                for (const message of dbChatMessages)
-                {
-                    messages.push(JSON.parse(message));
-                }
-
-                return messages;
-            }
-            catch (err)
-            {
-                console.error(err);
-            }
-        }
-        else
+        if (!await this.isChatExists(chatId))
         {
             console.debug(`Unable to get chat "${chatId}".`);
+            return null;
         }
 
-        return null;
+        try
+        {
+            const rows = this.db.prepare(
+                'SELECT username, message, timestamp FROM messages WHERE chat_id = ? ORDER BY id'
+            ).all(chatId);
+
+            return rows.map((row) => ({
+                username: row['username'] as string,
+                message: row['message'] as string,
+                timestamp: row['timestamp'] as number,
+            }));
+        }
+        catch (err)
+        {
+            console.error(err);
+            return null;
+        }
+    }
+
+
+    /// Helpers
+
+    private transaction(fn: () => void)
+    {
+        this.db.exec('BEGIN');
+
+        try
+        {
+            fn();
+            this.db.exec('COMMIT');
+        }
+        catch (err)
+        {
+            this.db.exec('ROLLBACK');
+            throw err;
+        }
+    }
+
+    private parseChatIds(value: unknown): string[]
+    {
+        const ids = typeof value === 'string' ? JSON.parse(value) : value;
+        if (!Array.isArray(ids))
+        {
+            throw new TypeError('Expected an array of chat IDs.');
+        }
+
+        return ids.map(String);
+    }
+
+    private setActiveChats(username: string, chatIds: string[])
+    {
+        if (chatIds.length === 0)
+        {
+            this.db.prepare('DELETE FROM chat_members WHERE username = ?').run(username);
+            return;
+        }
+
+        const placeholders = chatIds.map(() => '?').join(', ');
+        this.db.prepare(
+            `DELETE FROM chat_members WHERE username = ? AND chat_id NOT IN (${placeholders})`
+        ).run(username, ...chatIds);
+
+        for (const chatId of chatIds)
+        {
+            this.db.prepare(
+                'INSERT OR IGNORE INTO chat_members (username, chat_id, is_owner) VALUES (?, ?, 0)'
+            ).run(username, chatId);
+        }
+    }
+
+    private setOwnChats(username: string, chatIds: string[])
+    {
+        this.db.prepare('UPDATE chat_members SET is_owner = 0 WHERE username = ?').run(username);
+
+        for (const chatId of chatIds)
+        {
+            this.db.prepare(`
+                INSERT INTO chat_members (username, chat_id, is_owner) VALUES (?, ?, 1)
+                ON CONFLICT (username, chat_id) DO UPDATE SET is_owner = 1
+            `).run(username, chatId);
+        }
     }
 }
