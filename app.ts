@@ -5,7 +5,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import { expressjwt, type Request as JWTRequest } from 'express-jwt';
 
-import { RedisClient, type DBChatMessage } from './lib/db.ts';
+import { RedisClient } from './lib/db.ts';
 import { validateSaltedHash } from './lib/crypto.ts';
 import {
     getEnvKey,
@@ -14,7 +14,7 @@ import {
 } from './lib/lib.ts';
 
 
-process.loadEnvFile('./.env');
+process.loadEnvFile('./.dev.env');
 
 const SERVER_PORT = getEnvKey('SERVER_PORT');
 const WSS_PORT = +getEnvKey('WSS_PORT');
